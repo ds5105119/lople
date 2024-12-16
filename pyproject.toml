@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "blogapi2"
+version = "0.1.0"
+description = ""
+authors = ["IIH <ds5105119@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {extras = ["standard"], version = "^0.115.2"}
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+psycopg = {extras = ["binary"], version = "^3.2.3"}
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+alembic = "^1.13.2"
+pydantic-settings = "^2.5.2"
+ruff = "*"
+webtool = "^0.0.11"
+polars = "^1.17.0"
+fastapi-pagination = "^0.12.32"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.24.0"
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+lint.select = ["B", "C4", "E", "F", "N", "I", "W", "UP"]
+lint.ignore = ["F403","F405","E501","E402","B904"]
+lint.fixable = ["A", "B", "C", "D", "E", "F", "I", "UP"]
+lint.unfixable = []
+lint.per-file-ignores = {}
+line-length = 120
+target-version = "py39"
+
+
+[tool.pytest.ini_options]
+python_files = "test_*.py"
+asyncio_default_fixture_loop_scope = "session"
