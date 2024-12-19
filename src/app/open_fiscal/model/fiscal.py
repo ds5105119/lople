@@ -1,7 +1,7 @@
 import polars as pl
 
-from src.core.utils.openapi.datamanager import PolarsDataManager
-from src.core.utils.polarshelper import Table, group_by_frame_to_table
+from src.core.utils.openapi.data_manager import PolarsDataManager
+from src.core.utils.polarshelper import Table
 
 
 class BaseFiscalData:

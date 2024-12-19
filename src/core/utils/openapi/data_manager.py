@@ -3,8 +3,8 @@ from typing import Any, Callable
 
 import polars as pl
 
+from .data_cache import BaseDataCache
 from .data_loader import BaseOpenDataLoader
-from .data_saver import BaseDataSaver
 
 
 class BaseDataManager(ABC):
@@ -39,14 +39,14 @@ class PolarsDataManager(BaseDataManager):
     def __init__(
         self,
         data_loader: BaseOpenDataLoader,
-        data_saver: BaseDataSaver,
+        data_cache: BaseDataCache,
         path: str,
         params: dict | None = None,
         infer_scheme_length: int = 100000,
     ):
         self.data: pl.DataFrame = pl.DataFrame()
         self._data_loader = data_loader
-        self._data_saver = data_saver
+        self._data_cache = data_cache
         self._path = path
         self._params = params or {}
         self._infer_scheme_length = infer_scheme_length
@@ -54,13 +54,13 @@ class PolarsDataManager(BaseDataManager):
 
     async def init(self, reload: bool = False):
         if not reload:
-            data = await self._data_saver.get_cache(self._path)
+            data = await self._data_cache.get_cache(self._path)
         else:
             data = None
 
         if data is None:
             data = await self._data_loader.get_data(self._path, self._params)
-            await self._data_saver.set_cache(self._path, data)
+            await self._data_cache.set_cache(self._path, data)
 
         self.data = pl.DataFrame(data, infer_schema_length=self._infer_scheme_length)
         self._notify_callbacks()

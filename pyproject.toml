@@ -11,16 +11,20 @@ fastapi = {extras = ["standard"], version = "^0.115.2"}
 uvicorn = {extras = ["standard"], version = "^0.34.0"}
 psycopg = {extras = ["binary"], version = "^3.2.3"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
-alembic = "^1.13.2"
 pydantic-settings = "^2.5.2"
 ruff = "*"
 webtool = "^0.0.11"
 polars = "^1.17.0"
-fastapi-pagination = "^0.12.32"
-
+duckdb-engine = "^0.14.0"
+pyarrow = "^18.1.0"
+numpy = "^2.2.0"
+alembic = "^1.14.0"
+pandas = "^2.2.3"
+pymongo = {extras = ["aws"], version = "^4.10.1"}
 
 [tool.poetry.group.dev.dependencies]
 pytest-asyncio = "^0.24.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
@@ -32,7 +36,8 @@ lint.fixable = ["A", "B", "C", "D", "E", "F", "I", "UP"]
 lint.unfixable = []
 lint.per-file-ignores = {}
 line-length = 120
-target-version = "py39"
+target-version = "py313"
+exclude= ["alembic"]
 
 
 [tool.pytest.ini_options]

@@ -1,8 +1,6 @@
 services:
   db:
     image: postgres:alpine
-    env_file:
-      - ../.env
     restart: always
     shm_size: 128mb
     environment:
@@ -38,3 +36,12 @@ services:
       resources:
         limits:
           memory: 256m
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO__USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO__PASSWORD}
+    ports:
+      - "${MONGO__PORT}:${MONGO__PORT}"

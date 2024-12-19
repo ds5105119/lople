@@ -33,4 +33,4 @@ SWAGGER_URL=/api
 
 OPEN_FISCAL_DATA_API__KEY=CXNJC1001603120241121224131XYNQD' > .env
 
-ln -s .env ./docker/.env
+ln -s ../.env ./docker/.env

@@ -1,80 +1,72 @@
-from itertools import chain, product
-from typing import Annotated, Hashable, Self, Sequence
+from copy import deepcopy
+from typing import Callable, Self
 
 import polars as pl
-from fastapi import Query
-from pydantic import BaseModel, Field
-
-
-class PageParams(BaseModel):
-    page: int | None = Field(1, ge=1, description="Page number")
-    size: int | None = Field(50, ge=1, le=100, description="Page size")
-
-
-PageQuery = Annotated[PageParams, Query()]
 
 
 class Table:
-    def __init__(self, table: dict[tuple, list]):
-        self.table: dict[tuple, list] = table
-        self._raw_keys = list(self.table.keys())
-        self._key_count = 0 if len(self._raw_keys) == 0 else len(self._raw_keys[0])
-        self.keys = [{key[i] for key in self._raw_keys} for i in range(self._key_count)]
-        self.total = None
-        self.previous_page = None
-        self.next_page = None
-        self.page_size = None
+    def __init__(self, table: list[dict], columns: list | None = None):
+        self.table: list[dict] = table
+        self.columns = columns or list(range(len(self.table[0]))) if self.table else []
 
     def __repr__(self):
         return self.table.__repr__()
 
-    def index(self, stmt: Sequence[Sequence[Hashable]], page: int | None = None, size: int | None = None) -> Self:
-        if len(self._raw_keys[0]) < len(stmt):
-            raise IndexError
+    def __copy__(self):
+        return Table(self.table.copy())
 
-        if page is None and size is None:
-            table = {k: self.table.get(k) for k in product(*stmt, *self.keys[len(stmt) :])}
-            table = {k: v for k, v in table.items() if v is not None}
-            table = Table(table)
-
-        elif page is not None and size is not None:
-            table = self.page_index(stmt, page, size)
-
+    def __getitem__(self, item):
+        if isinstance(item, tuple):
+            if len(item) != 2:
+                raise IndexError("Unsupported indexing")
+            row, col = item
+            if isinstance(row, int) and isinstance(col, int):
+                table = self.table[row][col]
+            elif isinstance(row, int) and isinstance(col, slice):
+                table = self.table[row][col]
+            elif isinstance(row, slice) and isinstance(col, int):
+                table = [row[col] for row in self.table[row]]
+            elif isinstance(row, slice) and isinstance(col, slice):
+                table = [row[col] for row in self.table[row]]
+            else:
+                raise ValueError("Unsupported indexing")
+        elif isinstance(item, (int, slice)):
+            table = self.table[item]
         else:
-            raise ValueError("Page and size must be specified")
+            table = self.table[self._get_idx(item)]
 
-        return table
+        return Table(table, self.columns)
 
-    def page_index(self, stmt: Sequence[Sequence[Hashable]], page: int, size: int):
-        keys = sorted(tuple(set(product(*stmt, *self.keys[len(stmt) :])).intersection(self._raw_keys)))
-        table = {k: self.table.get(k) for k in keys[(page - 1) * size : page * size]}
-        table = Table(table)
+    def _get_idx(self, col):
+        try:
+            return self.columns.index(col)
+        except ValueError:
+            raise IndexError(f"Index {col} not in {self.columns}")
 
-        table.total = len(keys)
-        table.previous_page = page - 1 if page > 2 else None
-        table.next_page = page + 1 if page * size < len(keys) else None
-        table.page_size = len(table.table)
-        return table
+    def filter(self, func: Callable):
+        cp = self.__copy__()
+        cp.table = filter(func, cp.table)
+        return cp
 
-    def to_dicts(self):
-        if self.total is None:
-            return list(chain(*self.table.values()))
+    def sort(self, func: Callable, reverse: bool = False):
+        cp = self.__copy__()
+        cp.table = sorted(cp.table, key=func, reverse=reverse)
+        return cp
 
-        return {
-            "total": self.total,
-            "previousPage": self.previous_page,
-            "nextPage": self.next_page,
-            "pageSize": self.page_size,
-            "items": list(chain(*self.table.values())),
-        }
+    def limit(self, n: int, m: int):
+        cp = self.__copy__()
+        cp.table = cp.table[n:m]
+        return cp
 
+    def collect(self):
+        return Table(list(self.table))
 
-def group_by_frame_to_table(frame: pl.LazyFrame | pl.DataFrame, *col: str) -> Table:
-    if isinstance(frame, pl.LazyFrame):
-        frame = frame.collect()
+    def to_dict(self):
+        return self.table
 
-    fields = [sorted(set(frame.select(name).to_series())) for name in col]
-    table = {desc: frame.filter(**dict(zip(col, desc))).to_dicts() for desc in product(*fields)}
-    table = {k: v for k, v in table.items() if v}
+    @classmethod
+    def from_pandas(cls, frame: pl.LazyFrame | pl.DataFrame) -> Self:
+        if isinstance(frame, pl.LazyFrame):
+            frame = frame.collect()
 
-    return Table(table)
+        return cls(frame.to_dicts(), frame.columns)

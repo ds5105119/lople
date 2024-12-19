@@ -3,11 +3,11 @@ from src.app.open_fiscal.repository.fiscal import FiscalRepository
 from src.app.open_fiscal.service.fiscal import FiscalService
 from src.core.config import settings
 from src.core.dependencies.db import Redis
+from src.core.utils.openapi.data_cache import RedisDataCache
 from src.core.utils.openapi.data_loader import ApiConfig, FiscalDataLoader, OpenDataLoader
 from src.core.utils.openapi.data_manager import PolarsDataManager
-from src.core.utils.openapi.data_saver import RedisDataSaver
 
-default_data_saver = RedisDataSaver(Redis)
+default_data_saver = RedisDataCache(Redis)
 
 fiscal_data_loader = FiscalDataLoader(
     base_url="http://openapi.openfiscaldata.go.kr",

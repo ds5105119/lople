@@ -105,3 +105,6 @@ class UserService:
 
         access, refresh = await self._issue_tokens(user)
         return access, refresh
+
+    async def logout_user(self, refresh_token: str, session: postgres_session):
+        await self.jwt_service.invalidate_token(refresh_token)
