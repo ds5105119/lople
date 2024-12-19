@@ -1,29 +1,11 @@
 import polars as pl
 
-from src.core.utils.openapi.data_manager import PolarsDataManager
-from src.core.utils.polarshelper import Table
+from src.core.utils.openapi.data_saver import SQLiteDataSaver
 
 
-class FiscalData:
-    def __init__(
-        self,
-        service_list: PolarsDataManager,
-        service_detail: PolarsDataManager,
-        service_condition: PolarsDataManager,
-    ):
-        self.service_list = service_list
-        self.service_detail = service_detail
-        self.service_condition = service_condition
-
-        self.service_list.register_callback(self._callback)
-        self.service_detail.register_callback(self._callback)
-        self.service_condition.register_callback(self._callback)
-
-    def _callback(self):
-        print("Manager data updated. Rebuilding FiscalData...")
-        self.data = self.service_list.data.join(self.service_detail.data, how="left")
-        self.data = self.data.join(self.service_condition.data, how="left")
-        self.build()
-
+class GovWelfare(SQLiteDataSaver):
     def build(self):
-        pass
+        df = self.join(*[m.data for m in self.manager])
+        df = self.cast_y_null_to_bool(df)
+        df = df.filter(pl.col("소관기관유형") == "중앙행정기관")
+        return df

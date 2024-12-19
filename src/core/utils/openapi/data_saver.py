@@ -48,11 +48,7 @@ class SQLiteDataSaver(BaseDataSaver):
         self._save(data)
 
     def build(self) -> pl.DataFrame:
-        table = self.manager[0].data
-        for manager in self.manager[1:]:
-            columns = set(manager.data.columns) - set(col for col in table.columns if col not in self.join_by)
-            table = table.join(manager.data.select(columns), on=self.join_by, how="left")
-        return self.cast_y_null_to_bool(table)
+        raise NotImplementedError("build method must be implemented by subclass")
 
     def _build_table(self, data: pl.DataFrame):
         schema = {k: self._polars_dtype_to_dbtype(v) for k, v in data.collect_schema().items()}
@@ -74,8 +70,15 @@ class SQLiteDataSaver(BaseDataSaver):
         self.table.create(self.engine)
         data.write_database(self.table_name, connection=self.engine, if_table_exists="append")
 
+    def join(self, *df: pl.DataFrame):
+        table = df[0]
+        for frame in df[1:]:
+            columns = set(frame.columns) - set(col for col in table.columns if col not in self.join_by)
+            table = table.join(frame.select(columns), on=self.join_by, how="left")
+        return table
+
     @staticmethod
-    def cast_y_null_to_bool(df):
+    def cast_y_null_to_bool(df: pl.DataFrame):
         is_target = lambda col: col.drop_nulls().unique().len() == 1 and col.drop_nulls().unique()[0] == "Y"
         target = [col for col in df.columns if df[col].dtype == pl.Utf8 and is_target(df[col])]
         converted_df = [pl.when(pl.col(col) == "Y").then(True).otherwise(False).alias(col) for col in target]
