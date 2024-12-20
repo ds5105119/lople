@@ -3,18 +3,18 @@ from sqlalchemy.ext.asyncio import AsyncSession as Session
 
 from src.app.user.model.user import User
 from src.core.models.repository import (
-    BaseCreateRepository,
-    BaseDeleteRepository,
-    BaseReadRepository,
-    BaseUpdateRepository,
+    ABaseCreateRepository,
+    ABaseDeleteRepository,
+    ABaseReadRepository,
+    ABaseUpdateRepository,
 )
 
 
-class UserCreateRepository(BaseCreateRepository[User]):
+class UserCreateRepository(ABaseCreateRepository[User]):
     pass
 
 
-class UserReadRepository(BaseReadRepository[User]):
+class UserReadRepository(ABaseReadRepository[User]):
     async def get_unique_fields(self, session: Session, email: str, handle: str):
         result = await self.get(
             session,
@@ -37,11 +37,11 @@ class UserReadRepository(BaseReadRepository[User]):
         return result
 
 
-class UserUpdateRepository(BaseUpdateRepository[User]):
+class UserUpdateRepository(ABaseUpdateRepository[User]):
     pass
 
 
-class UserDeleteRepository(BaseDeleteRepository[User]):
+class UserDeleteRepository(ABaseDeleteRepository[User]):
     pass
 
 

@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 
 import polars as pl
 import sqlalchemy
-from sqlalchemy import Column, Integer, MetaData, Table
+from sqlalchemy import Column, Index, Integer, MetaData, Table
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import DeclarativeBase
 
 from .data_manager import BaseDataManager
 
@@ -29,15 +30,18 @@ class SQLiteDataSaver(BaseDataSaver):
         *data: BaseDataManager,
         engine: Engine,
         table_name: str,
+        index: list[str | list[str, str]] | None = None,
         join_by: list[str] | None = None,
         pk: str | None = None,
+        table: DeclarativeBase | None = None,
     ):
         self.engine = engine
         self.metadata = MetaData()
         self.pk = pk
         self.join_by = join_by
         self.table_name = table_name
-        self.table = Column(self.table_name, self.metadata)
+        self.index = index
+        self.table = table or Table(self.table_name, self.metadata)
         self.manager: tuple[BaseDataManager, ...] = data
         self._callback()
         [m.register_callback(self._callback) for m in self.manager]
@@ -68,21 +72,15 @@ class SQLiteDataSaver(BaseDataSaver):
     def _save(self, data: pl.DataFrame):
         self.table.drop(self.engine, checkfirst=True)
         self.table.create(self.engine)
+
+        def create_index(idx: str | list[str]) -> Index:
+            if isinstance(idx, str):
+                return Index(f"idx_{idx}", getattr(self.table.c, idx))
+            else:
+                return Index(f"idx_{"_".join(idx)}", *(getattr(self.table.c, i) for i in idx))
+
+        [create_index(idx).create(bind=self.engine) for idx in self.index]
         data.write_database(self.table_name, connection=self.engine, if_table_exists="append")
-
-    def join(self, *df: pl.DataFrame):
-        table = df[0]
-        for frame in df[1:]:
-            columns = set(frame.columns) - set(col for col in table.columns if col not in self.join_by)
-            table = table.join(frame.select(columns), on=self.join_by, how="left")
-        return table
-
-    @staticmethod
-    def cast_y_null_to_bool(df: pl.DataFrame):
-        is_target = lambda col: col.drop_nulls().unique().len() == 1 and col.drop_nulls().unique()[0] == "Y"
-        target = [col for col in df.columns if df[col].dtype == pl.Utf8 and is_target(df[col])]
-        converted_df = [pl.when(pl.col(col) == "Y").then(True).otherwise(False).alias(col) for col in target]
-        return df.with_columns(converted_df)
 
     @staticmethod
     def _polars_dtype_to_dbtype(t: pl.DataType):

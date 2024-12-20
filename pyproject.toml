@@ -13,7 +13,7 @@ psycopg = {extras = ["binary"], version = "^3.2.3"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
 pydantic-settings = "^2.5.2"
 ruff = "*"
-webtool = "^0.0.11"
+webtool = "^0.0.13"
 polars = "^1.17.0"
 duckdb-engine = "^0.14.0"
 pyarrow = "^18.1.0"

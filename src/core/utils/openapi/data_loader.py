@@ -242,6 +242,24 @@ class OpenDataLoader(BaseOpenDataLoader):
 
 
 class FiscalDataLoader(OpenDataLoader):
+    def __init__(
+        self,
+        base_url: str,
+        swagger_url: str | None = None,
+        api_key: str | None = None,
+        paths: dict | None = None,
+        start_year: int | None = None,
+        end_year: int | None = None,
+        batch_size: int = 1000,
+        concurrency_limit: int = 20,
+        timeout: int = 30,
+        api_config: ApiConfig | None = None,
+    ):
+        super().__init__(base_url, swagger_url, api_key, paths, batch_size, concurrency_limit, timeout, api_config)
+
+        self.start_year = start_year or datetime.now().year - 30
+        self.end_year = end_year or datetime.now().year + 1
+
     async def fetch_total_record_count(
         self,
         client: httpx.AsyncClient,
@@ -284,7 +302,7 @@ class FiscalDataLoader(OpenDataLoader):
             _params[self._api_config.request_year] = year
             return await self.fetch_paginated_data(client, path, _params, semaphore)
 
-        tasks = [fetch(str(year)) for year in range(datetime.now().year - 30, datetime.now().year + 2)]
+        tasks = [fetch(str(year)) for year in range(self.start_year, self.end_year + 1)]
         data = list(chain.from_iterable(await asyncio.gather(*tasks)))
 
         await client.aclose()
