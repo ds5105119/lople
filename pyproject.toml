@@ -1,28 +1,31 @@
 [tool.poetry]
-name = "blogapi2"
+name = "AllZip"
 version = "0.1.0"
 description = ""
 authors = ["IIH <ds5105119@gmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "src" }
+]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.13"
+
 fastapi = {extras = ["standard"], version = "^0.115.2"}
-uvicorn = {extras = ["standard"], version = "^0.34.0"}
-psycopg = {extras = ["binary"], version = "^3.2.3"}
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
 pydantic-settings = "^2.5.2"
-ruff = "*"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+
 webtool = "^0.0.13"
-polars = "^1.17.0"
-duckdb-engine = "^0.14.0"
-pyarrow = "^18.1.0"
-numpy = "^2.2.0"
 alembic = "^1.14.0"
-pandas = "^2.2.3"
-pymongo = {extras = ["aws"], version = "^4.10.1"}
+asyncpg = "^0.30.0"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+
+numpy = "^2.2.1"
+polars = {extras = ["pyarrow", "pandas"], version = "^1.18.0" }
+psycopg = {extras = ["binary"], version = "^3.2.3"}
 
 [tool.poetry.group.dev.dependencies]
+ruff = "*"
 pytest-asyncio = "^0.24.0"
 
 [build-system]

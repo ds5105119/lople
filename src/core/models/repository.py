@@ -1,6 +1,6 @@
 from typing import Any, Sequence, TypeVar, cast
 
-from sqlalchemy import Result, delete, insert, select, update
+from sqlalchemy import Result, SQLColumnExpression, asc, delete, desc, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -44,19 +44,55 @@ class BaseCreateRepository[T](BaseRepository[T]):
 
 
 class BaseReadRepository[T](BaseRepository[T]):
-    def get(self, session: Session, filters: Sequence, columns: list[str] | None = None) -> _P:
-        columns = self.get_columns(columns)
+    def get(
+        self,
+        session: Session,
+        filters: Sequence,
+        columns: list[SQLColumnExpression] | None = None,
+        order_by: list[str] | None = None,
+    ) -> _P:
+        columns = columns or self.model
+
         stmt = select(*columns).where(*filters)
+        if order_by is not None:
+            stmt = stmt.order_by(*order_by)
         result = session.execute(stmt)
 
         return result
 
-    def get_by_id(self, session: Session, id: int | str, columns: list[str] | None = None) -> _P:
-        columns = self.get_columns(columns)
+    def get_by_id(
+        self,
+        session: Session,
+        id: int | str,
+        columns: list[SQLColumnExpression] | None = None,
+        order_by: list[str] | None = None,
+    ) -> _P:
+        columns = columns or self.model
+
         stmt = select(*columns).where(cast("ColumnElement[bool]", self.model.id == id))
+        if order_by is not None:
+            stmt = stmt.order_by(*order_by)
         result = session.execute(stmt)
 
         return result
+
+    def get_page(
+        self,
+        session: Session,
+        page: int,
+        size: int,
+        filters: Sequence,
+        columns: list[SQLColumnExpression] | None = None,
+        order_by: list[str] | None = None,
+    ) -> _P:
+        columns = columns or self.model
+
+        stmt = select(*columns).where(*filters).fetch(size).offset(page * size)
+        if order_by is not None:
+            stmt = stmt.order_by(*order_by)
+        results = session.execute(stmt)
+
+        return results
 
 
 class BaseUpdateRepository[T](BaseRepository[T]):
@@ -123,19 +159,55 @@ class ABaseCreateRepository[T](ABaseRepository[T]):
 
 
 class ABaseReadRepository[T](ABaseRepository[T]):
-    async def get(self, session: AsyncSession, filters: Sequence, columns: list[str] | None = None) -> _P:
+    async def get(
+        self,
+        session: AsyncSession,
+        filters: Sequence,
+        columns: list[SQLColumnExpression] | None = None,
+        order_by: list[str] | None = None,
+    ) -> _P:
         columns = self.get_columns(columns)
+
         stmt = select(*columns).where(*filters)
+        if order_by is not None:
+            stmt = stmt.order_by(*order_by)
         result = await session.execute(stmt)
 
         return result
 
-    async def get_by_id(self, session: AsyncSession, id: int | str, columns: list[str] | None = None) -> _P:
+    async def get_by_id(
+        self,
+        session: AsyncSession,
+        id: int | str,
+        columns: list[SQLColumnExpression] | None = None,
+        order_by: list[SQLColumnExpression] | None = None,
+    ) -> _P:
         columns = self.get_columns(columns)
+
         stmt = select(*columns).where(cast("ColumnElement[bool]", self.model.id == id))
+        if order_by is not None:
+            stmt = stmt.order_by(*order_by)
         result = await session.execute(stmt)
 
         return result
+
+    async def get_page(
+        self,
+        session: AsyncSession,
+        page: int,
+        size: int,
+        filters: Sequence,
+        columns: list[SQLColumnExpression] | None = None,
+        order_by: list[SQLColumnExpression] | None = None,
+    ) -> _P:
+        columns = columns or self.model
+
+        stmt = select(*columns).where(*filters).fetch(size).offset(page * size)
+        if order_by is not None:
+            stmt = stmt.order_by(*order_by)
+        results = await session.execute(stmt)
+
+        return results
 
 
 class ABaseUpdateRepository[T](ABaseRepository[T]):

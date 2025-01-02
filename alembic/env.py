@@ -1,17 +1,16 @@
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
-
 from alembic import context
+
 from src.core.config import settings
 from src.core.models.model import metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-
 if not config.get_main_option("sqlalchemy.url"):
-    config.set_main_option("sqlalchemy.url", settings.postgres_dsn.unicode_string().replace("%", "%%"))
+    config.set_main_option("sqlalchemy.url", settings.sync_postgres_dsn.unicode_string().replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -43,7 +42,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={"paramstyle": "named"}
     )
 
     with context.begin_transaction():

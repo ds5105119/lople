@@ -1,24 +1,25 @@
+from src.app.open_fiscal.model.welfare import GovWelfare
 from src.core.models.repository import (
-    BaseCreateRepository,
-    BaseDeleteRepository,
-    BaseReadRepository,
-    BaseUpdateRepository,
+    ABaseCreateRepository,
+    ABaseDeleteRepository,
+    ABaseReadRepository,
+    ABaseUpdateRepository,
 )
 
 
-class GovWelfareCreateRepository(BaseCreateRepository):
+class GovWelfareCreateRepository(ABaseCreateRepository[GovWelfare]):
     pass
 
 
-class GovWelfareReadRepository(BaseReadRepository):
+class GovWelfareReadRepository(ABaseReadRepository[GovWelfare]):
     pass
 
 
-class GovWelfareUpdateRepository(BaseUpdateRepository):
+class GovWelfareUpdateRepository(ABaseUpdateRepository[GovWelfare]):
     pass
 
 
-class GovWelfareDeleteRepository(BaseDeleteRepository):
+class GovWelfareDeleteRepository(ABaseDeleteRepository[GovWelfare]):
     pass
 
 

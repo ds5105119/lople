@@ -1,22 +1,33 @@
 import datetime
+import enum
 from typing import Optional
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKeyConstraint, Integer, PrimaryKeyConstraint, String, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, func
 from sqlalchemy.ext.mutable import MutableSet
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from src.app.user.model.user_data import UserData
 from src.core.models.base import Base
+from src.core.models.helper import IntEnum
+
+
+class Gender(enum.Enum):
+    male = 0
+    female = 1
+
+
+class GenderT(IntEnum):
+    _enum_type = Gender
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
     email: Mapped[str] = mapped_column(String(255), unique=True)
     handle: Mapped[str] = mapped_column(String(255), unique=True)
     password: Mapped[str] = mapped_column(String(255))
-    birthday: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
 
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, onupdate=func.now())
@@ -28,21 +39,21 @@ class User(Base):
 
     resignation_reason: Mapped[Optional[str]] = mapped_column(String(255))
 
-    profiles: Mapped["Profile"] = relationship("Profile", back_populates="users", uselist=False)
+    profile: Mapped["Profile"] = relationship("Profile", back_populates="user", uselist=False)
+    user_data: Mapped["UserData"] = relationship("UserData", back_populates="user", uselist=False)
 
 
 class Profile(Base):
-    __tablename__ = "profiles"
-    __table_args__ = (
-        PrimaryKeyConstraint("id", name="profiles_pk"),
-        ForeignKeyConstraint(["user_id"], ["users.id"], name="profiles_user_id_fk", ondelete="CASCADE"),
-    )
+    __tablename__ = "profile"
+    __table_args__ = (ForeignKeyConstraint(["user_id"], ["user.id"], name="profiles_user_id_fk", ondelete="CASCADE"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer)
 
+    sex: Mapped["Gender"] = mapped_column(GenderT)
+    birthday: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
     profile: Mapped[str] = mapped_column(String(255))
     bio: Mapped[Optional[str]] = mapped_column(String(255))
     link: Mapped[Optional[list]] = mapped_column(MutableSet.as_mutable(JSON))
 
-    users: Mapped["User"] = relationship("User", back_populates="profiles")
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    user: Mapped["User"] = relationship("User", back_populates="profile")

@@ -1,3 +1,4 @@
+import inspect
 from abc import ABC, abstractmethod
 from typing import Any, Callable
 
@@ -5,6 +6,13 @@ import polars as pl
 
 from .data_cache import BaseDataCache
 from .data_loader import BaseOpenDataLoader
+
+
+async def execute(func, *args, **kwargs):
+    if inspect.iscoroutinefunction(func):
+        return await func(*args, **kwargs)
+    else:
+        return func(*args, **kwargs)
 
 
 class BaseDataManager(ABC):
@@ -16,6 +24,7 @@ class BaseDataManager(ABC):
     """
 
     data: Any
+    is_initialized: bool
 
     @abstractmethod
     async def init(self):
@@ -45,6 +54,7 @@ class PolarsDataManager(BaseDataManager):
         infer_scheme_length: int = 100000,
     ):
         self.data: pl.DataFrame = pl.DataFrame()
+        self.is_initialized = False
         self._data_loader = data_loader
         self._data_cache = data_cache
         self._path = path
@@ -63,10 +73,11 @@ class PolarsDataManager(BaseDataManager):
             await self._data_cache.set_cache(self._path, data)
 
         self.data = pl.DataFrame(data, infer_schema_length=self._infer_scheme_length)
-        self._notify_callbacks()
+        self.is_initialized = True
+        await self._notify_callbacks()
 
-    def _notify_callbacks(self):
-        [callback() for callback in self._callbacks]
+    async def _notify_callbacks(self):
+        [await execute(callback) for callback in self._callbacks]
 
     def register_callback(self, callback: Callable):
         self._callbacks.append(callback)

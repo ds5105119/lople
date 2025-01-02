@@ -1,4 +1,6 @@
-from src.app.user.model.user import Profile, User
+from src.app.open_fiscal.model.welfare import *
+from src.app.user.model.user import *
+from src.app.user.model.user_data import *
 
 from .base import Base
 

@@ -1,2 +1,2 @@
 #!/bin/bash
-alembic revision --autogenerate -m "$1"
+poetry run alembic revision --autogenerate -m "$1"

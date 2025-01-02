@@ -1,7 +1,8 @@
-from src.app.open_fiscal.model.welfare import GovWelfare
+from src.app.open_fiscal.model.welfare import GovWelfare, GovWelfareSaver
 from src.app.open_fiscal.repository.welfare import GovWelfareRepository
+from src.app.open_fiscal.service.welfare import GovWelfareService
 from src.core.config import settings
-from src.core.dependencies.db import Redis, Sqlite
+from src.core.dependencies.db import Postgres_sync, Redis
 from src.core.utils.openapi.data_cache import RedisDataCache
 from src.core.utils.openapi.data_loader import ApiConfig, FiscalDataLoader, OpenDataLoader
 from src.core.utils.openapi.data_manager import PolarsDataManager
@@ -42,12 +43,13 @@ gov24_service_conditions_manager = PolarsDataManager(
 )
 
 
-gov_welfare = GovWelfare(
-    gov24_service_detail_manager,
+gov_welfare = GovWelfareSaver(
+    gov24_service_list_manager,
     gov24_service_detail_manager,
     gov24_service_conditions_manager,
-    engine=Sqlite.engine,
-    table_name="gov24_gov_welfare",
-    join_by=["서비스ID"],
+    db=Postgres_sync,
+    table=GovWelfare,
 )
-gov_welfare_repository = GovWelfareRepository(gov_welfare.table)
+
+gov_welfare_repository = GovWelfareRepository(GovWelfare)
+gov_welfare_service = GovWelfareService(gov_welfare_repository)

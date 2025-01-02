@@ -1,12 +1,16 @@
 from abc import ABC, abstractmethod
+from typing import TypeVar
 
 import polars as pl
 import sqlalchemy
-from sqlalchemy import Column, Index, Integer, MetaData, Table
+from sqlalchemy import Column, Index, Integer, MetaData, Table, delete
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase
+from webtool.db import SyncDB
 
 from .data_manager import BaseDataManager
+
+T = TypeVar("T", bound=DeclarativeBase)
 
 
 class BaseDataSaver(ABC):
@@ -18,41 +22,80 @@ class BaseDataSaver(ABC):
     def build(self):
         pass
 
-    @staticmethod
-    @abstractmethod
-    def _polars_dtype_to_dbtype(t: pl.DataType):
-        pass
+
+class PostgresDataSaver(BaseDataSaver):
+    def __init__(
+        self,
+        *data: BaseDataManager,
+        db: SyncDB,
+        table: type[T],
+    ):
+        self.db = db
+        self.manager: tuple[BaseDataManager, ...] = data
+        self.table = table
+
+        [m.register_callback(self._callback) for m in self.manager]
+
+    def build(self) -> pl.DataFrame:
+        raise NotImplementedError("build method must be implemented by subclass")
+
+    def _callback(self):
+        if all(manager.is_initialized for manager in self.manager):
+            data = self.build()
+            self._save(data)
+
+    def _save(self, data: pl.DataFrame):
+        try:
+            with self.db.engine.connect() as conn:
+                with conn.begin():
+                    conn.execute(delete(self.table))
+        except sqlalchemy.exc.ProgrammingError:
+            pass
+
+        data.write_database(self.table.__tablename__, connection=self.db.engine, if_table_exists="append")
 
 
 class SQLiteDataSaver(BaseDataSaver):
+    """
+    SQLiteDataSaver 은 여러 DataManager 로부터 데이터를 구현된 build 메서드로 취합하여 Sqlite DB 에 전송합니다.
+    이 과정에서 미리 만들어진 테이블 혹은 자동 생성 방식을 선택할 수 있습니다.
+
+    자동 생성 방식은 table_name가 필요하고, table 의 상태를 수동으로 추적해야 합니다.
+    미리 만들어진 테이블을 사용하는 것이 권장됩니다.
+    """
+
     def __init__(
         self,
         *data: BaseDataManager,
         engine: Engine,
-        table_name: str,
+        table: type[T] | None = None,
+        table_name: str | None = None,
         index: list[str | list[str, str]] | None = None,
-        join_by: list[str] | None = None,
         pk: str | None = None,
-        table: DeclarativeBase | None = None,
     ):
+        if table is None and table_name is None:
+            raise ValueError("table or table_name must be specified")
+
         self.engine = engine
         self.metadata = MetaData()
         self.pk = pk
-        self.join_by = join_by
-        self.table_name = table_name
-        self.index = index
-        self.table = table or Table(self.table_name, self.metadata)
+        self.table_name = table.__tablename__ if table is not None else table_name
+        self.index = index or []
         self.manager: tuple[BaseDataManager, ...] = data
-        self._callback()
-        [m.register_callback(self._callback) for m in self.manager]
+        self.table = table or Table(self.table_name, self.metadata)
+        self._has_pre_existing_table = False if table is None else True
 
-    def _callback(self):
-        data = self.build()
-        self._build_table(data)
-        self._save(data)
+        [m.register_callback(self._callback) for m in self.manager]
 
     def build(self) -> pl.DataFrame:
         raise NotImplementedError("build method must be implemented by subclass")
+
+    def _callback(self):
+        if all(manager.is_initialized for manager in self.manager):
+            data = self.build()
+            if not self._has_pre_existing_table:
+                self._build_table(data)
+            self._save(data)
 
     def _build_table(self, data: pl.DataFrame):
         schema = {k: self._polars_dtype_to_dbtype(v) for k, v in data.collect_schema().items()}
@@ -67,7 +110,7 @@ class SQLiteDataSaver(BaseDataSaver):
             pass
 
         col.extend([Column(k, getattr(sqlalchemy, v)) for k, v in schema.items()])
-        self.table = Table(self.table_name, self.metadata, *col)
+        self.table = Table(self.table_name, self.metadata, *col, extend_existing=True)
 
     def _save(self, data: pl.DataFrame):
         self.table.drop(self.engine, checkfirst=True)
@@ -79,8 +122,9 @@ class SQLiteDataSaver(BaseDataSaver):
             else:
                 return Index(f"idx_{"_".join(idx)}", *(getattr(self.table.c, i) for i in idx))
 
-        [create_index(idx).create(bind=self.engine) for idx in self.index]
-        data.write_database(self.table_name, connection=self.engine, if_table_exists="append")
+        if not self._has_pre_existing_table:
+            [create_index(idx).create(bind=self.engine) for idx in self.index]
+            data.write_database(self.table_name, connection=self.engine, if_table_exists="append")
 
     @staticmethod
     def _polars_dtype_to_dbtype(t: pl.DataType):

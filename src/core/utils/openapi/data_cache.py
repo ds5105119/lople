@@ -50,7 +50,11 @@ class RedisDataCache(BaseDataCache):
 
     async def get_cache(self, key: str) -> dict | None:
         cache_key = self.get_cache_key(key)
-        serialized_data = await self.cache.get(cache_key)
+
+        try:
+            serialized_data = await self.cache.get(cache_key)
+        except Exception:
+            serialized_data = None
 
         if serialized_data:
             return json.loads(gzip.decompress(serialized_data))
