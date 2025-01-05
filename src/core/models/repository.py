@@ -1,11 +1,12 @@
 from typing import Any, Sequence, TypeVar, cast
 
-from sqlalchemy import Result, SQLColumnExpression, asc, delete, desc, func, insert, select, update
+from sqlalchemy import Result, SQLColumnExpression, delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Session
 
 T = TypeVar("T", bound=DeclarativeBase)
 _P = Result[tuple[Any]]
+_IP = Result[tuple[T]]
 
 
 class BaseRepository[T]:
@@ -15,32 +16,19 @@ class BaseRepository[T]:
     def __init__(self, model: type[T]):
         self.model = model
 
-    def get_columns(self, columns: list[str] | None) -> list:
-        if columns:
-            return [getattr(self.model, column) for column in columns]
-        return [self.model]
-
 
 class BaseCreateRepository[T](BaseRepository[T]):
-    def _create(self, session: Session, **kwargs: Any) -> T:
+    def create(self, session: Session, **kwargs: Any) -> T:
         session.add(entity := self.model(**kwargs))
         session.commit()
         session.refresh(self.model)
 
         return entity
 
-    def _bulk_create(self, session: Session, kwargs: Sequence[dict[str, Any]]) -> None:
+    def bulk_create(self, session: Session, kwargs: Sequence[dict[str, Any]]) -> None:
         stmt = insert(self.model).values(kwargs)
         session.execute(stmt)
         session.commit()
-
-    def create(self, session: Session, values: Sequence[dict[str, Any]], **kwargs: Any) -> T:
-        if kwargs:
-            return self._create(session, **kwargs)
-        elif values:
-            return self._bulk_create(session, values)
-        else:
-            raise ValueError("Invalid arguments for creation.")
 
 
 class BaseReadRepository[T](BaseRepository[T]):
@@ -51,7 +39,7 @@ class BaseReadRepository[T](BaseRepository[T]):
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[str] | None = None,
     ) -> _P:
-        columns = columns or self.model
+        columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(*filters)
         if order_by is not None:
@@ -67,7 +55,7 @@ class BaseReadRepository[T](BaseRepository[T]):
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[str] | None = None,
     ) -> _P:
-        columns = columns or self.model
+        columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(cast("ColumnElement[bool]", self.model.id == id))
         if order_by is not None:
@@ -85,7 +73,7 @@ class BaseReadRepository[T](BaseRepository[T]):
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[str] | None = None,
     ) -> _P:
-        columns = columns or self.model
+        columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(*filters).fetch(size).offset(page * size)
         if order_by is not None:
@@ -94,9 +82,22 @@ class BaseReadRepository[T](BaseRepository[T]):
 
         return results
 
+    def get_instance(
+        self,
+        session: Session,
+        filters: Sequence,
+        order_by: list[str] | None = None,
+    ) -> _IP:
+        stmt = select(self.model).where(*filters)
+        if order_by is not None:
+            stmt = stmt.order_by(*order_by)
+        result = session.execute(stmt)
+
+        return result
+
 
 class BaseUpdateRepository[T](BaseRepository[T]):
-    def filter(self, session: Session, filters: Sequence, **kwargs) -> None:
+    def update(self, session: Session, filters: Sequence, **kwargs) -> None:
         query = update(self.model).where(*filters).values(**kwargs)
         session.execute(query)
         session.commit()
@@ -132,30 +133,17 @@ class ABaseRepository[T](BaseRepository[T]):
 
 
 class ABaseCreateRepository[T](ABaseRepository[T]):
-    async def _create(self, session: AsyncSession, **kwargs: Any) -> T:
+    async def create(self, session: AsyncSession, **kwargs: Any) -> T:
         session.add(entity := self.model(**kwargs))
         await session.commit()
         await session.refresh(entity)
 
         return entity
 
-    async def _bulk_create(self, session: AsyncSession, kwargs: Sequence[dict[str, Any]]) -> None:
+    async def bulk_create(self, session: AsyncSession, kwargs: Sequence[dict[str, Any]]) -> None:
         stmt = insert(self.model).values(kwargs)
         await session.execute(stmt)
         await session.commit()
-
-    async def create(
-        self,
-        session: AsyncSession,
-        values: Sequence[dict[str, Any]] | None = None,
-        **kwargs: Any,
-    ) -> T | None:
-        if kwargs:
-            return await self._create(session, **kwargs)
-        elif values:
-            return await self._bulk_create(session, values)
-        else:
-            raise ValueError("Invalid arguments for creation.")
 
 
 class ABaseReadRepository[T](ABaseRepository[T]):
@@ -166,7 +154,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[str] | None = None,
     ) -> _P:
-        columns = self.get_columns(columns)
+        columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(*filters)
         if order_by is not None:
@@ -182,7 +170,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[SQLColumnExpression] | None = None,
     ) -> _P:
-        columns = self.get_columns(columns)
+        columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(cast("ColumnElement[bool]", self.model.id == id))
         if order_by is not None:
@@ -200,7 +188,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[SQLColumnExpression] | None = None,
     ) -> _P:
-        columns = columns or self.model
+        columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(*filters).fetch(size).offset(page * size)
         if order_by is not None:
@@ -209,9 +197,22 @@ class ABaseReadRepository[T](ABaseRepository[T]):
 
         return results
 
+    async def get_instance(
+        self,
+        session: AsyncSession,
+        filters: Sequence,
+        order_by: list[str] | None = None,
+    ) -> _IP:
+        stmt = select(self.model).where(*filters)
+        if order_by is not None:
+            stmt = stmt.order_by(*order_by)
+        result = await session.execute(stmt)
+
+        return result
+
 
 class ABaseUpdateRepository[T](ABaseRepository[T]):
-    async def filter(self, session: AsyncSession, filters: Sequence, **kwargs) -> None:
+    async def update(self, session: AsyncSession, filters: Sequence, **kwargs) -> None:
         query = update(self.model).where(*filters).values(**kwargs)
         await session.execute(query)
         await session.commit()

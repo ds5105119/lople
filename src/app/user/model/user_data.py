@@ -1,7 +1,7 @@
 import enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, Integer
+from sqlalchemy import Boolean, ForeignKey, ForeignKeyConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.models.base import Base
@@ -62,12 +62,21 @@ class UserData(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    overcome: Mapped[int] = mapped_column(Integer)
+    overcome: Mapped[int] = mapped_column(Integer, nullable=True)
 
-    life_status: Mapped[LifeStatus] = mapped_column(LifeStatusT, default=LifeStatus.none)
-    primary_industry_status: Mapped[PrimaryIndustryStatus] = mapped_column(PrimaryIndustryStatusT, default=0)
-    academic_status: Mapped[WorkingStatus] = mapped_column(WorkingStatusT, default=0)
-    working_status: Mapped[AcademicStatus] = mapped_column(AcademicStatusT, default=0)
+    multicultural: Mapped[bool] = mapped_column(Boolean, default=False)
+    north_korean: Mapped[bool] = mapped_column(Boolean, default=False)
+    single_parent_or_grandparent: Mapped[bool] = mapped_column(Boolean, default=False)
+    homeless: Mapped[bool] = mapped_column(Boolean, default=False)
+    new_resident: Mapped[bool] = mapped_column(Boolean, default=False)
+    multi_child_family: Mapped[bool] = mapped_column(Boolean, default=False)
+    single_family: Mapped[bool] = mapped_column(Boolean, default=False)
+    extend_family: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    life_status: Mapped[int] = mapped_column(Integer, default=0)
+    primary_industry_status: Mapped[int] = mapped_column(Integer, default=0)
+    academic_status: Mapped[int] = mapped_column(Integer, default=0)
+    working_status: Mapped[int] = mapped_column(Integer, default=0)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), unique=True, nullable=False)
     user: Mapped["User"] = relationship("User", back_populates="user_data")

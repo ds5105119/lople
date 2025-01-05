@@ -10,6 +10,8 @@ class IntEnum(TypeDecorator):
     """
 
     impl = Integer
+    cache_ok = True
+
     _enum_type: Any
 
     def __init__(self, *args, **kwargs):
@@ -18,8 +20,7 @@ class IntEnum(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if isinstance(value, int):
             return value
-
-        return value.value
+        raise ValueError("value must be an integer")
 
     def process_result_value(self, value, dialect):
-        return self._enum_type(value)
+        return value

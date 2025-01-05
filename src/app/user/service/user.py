@@ -18,7 +18,7 @@ class UserService:
     @staticmethod
     def _user_to_claim(user):
         return {
-            "sub": user.id,
+            "sub": str(user.id),
         }
 
     async def _issue_tokens(self, db_user):
@@ -60,7 +60,7 @@ class UserService:
         if data.email:
             user = await self.repository.get_user_by_email(session, cast(str, data.email))
         else:
-            user = await self.repository.get_user_by_handle(session, data.handle)
+            user = await self.repository.get_user_by_handle(session, data.username)
 
         user = user.mappings().first()
 

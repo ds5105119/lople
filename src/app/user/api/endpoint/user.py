@@ -5,9 +5,6 @@ from fastapi import APIRouter, Depends, Response, status
 from src.app.user.api.dependencies import user_service
 from src.app.user.schema.login import LoginResponse
 from src.app.user.schema.register import RegisterResponse
-from src.core.dependencies.oauth import oauth_password_schema
-
-# oauth_password_schema는 차후 유저 인증용
 
 router = APIRouter()
 

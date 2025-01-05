@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from webtool.throttle import limiter
 
 from src.app.open_fiscal.api.dependencies import gov_welfare_service

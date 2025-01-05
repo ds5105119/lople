@@ -3,13 +3,13 @@ from typing_extensions import Self
 
 
 class LoginDto(BaseModel):
-    email: EmailStr | None
-    handle: str | None
+    email: EmailStr | None = None
+    username: str | None = None
     password: str = Field(min_length=8, max_length=30)
 
     @model_validator(mode="after")
     def check_email_or_handle(self) -> Self:
-        if not (self.email or self.handle):
+        if not (self.email or self.username):
             raise ValueError("email and handle is empty.")
         return self
 
