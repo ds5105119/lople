@@ -15,7 +15,7 @@ class LifeStatus(enum.Enum):
     none = 0
     prospective_parents_or_infertility = 1
     pregnant = 2
-    Childbirth_or_adoption = 3
+    childbirth_or_adoption = 3
 
 
 class LifeStatusT(IntEnum):

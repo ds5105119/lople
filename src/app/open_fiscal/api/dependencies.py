@@ -1,7 +1,7 @@
 from src.app.open_fiscal.model.welfare import GovWelfare, GovWelfareSaver
 from src.app.open_fiscal.repository.welfare import GovWelfareRepository
 from src.app.open_fiscal.service.welfare import GovWelfareService
-from src.app.user.api.dependencies import user_data_repository
+from src.app.user.api.dependencies import user_repository
 from src.core.config import settings
 from src.core.dependencies.db import Postgres_sync, Redis
 from src.core.utils.openapi.data_cache import RedisDataCache
@@ -53,4 +53,4 @@ gov_welfare = GovWelfareSaver(
 )
 
 gov_welfare_repository = GovWelfareRepository(GovWelfare)
-gov_welfare_service = GovWelfareService(gov_welfare_repository, user_data_repository)
+gov_welfare_service = GovWelfareService(gov_welfare_repository, user_repository)

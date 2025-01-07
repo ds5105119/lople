@@ -38,12 +38,15 @@ class BaseReadRepository[T](BaseRepository[T]):
         filters: Sequence,
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[str] | None = None,
+        options: Sequence = None,
     ) -> _P:
         columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(*filters)
         if order_by is not None:
             stmt = stmt.order_by(*order_by)
+        if options is not None:
+            stmt = stmt.options(*options)
         result = session.execute(stmt)
 
         return result
@@ -54,12 +57,15 @@ class BaseReadRepository[T](BaseRepository[T]):
         id: int | str,
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[str] | None = None,
+        options: Sequence = None,
     ) -> _P:
         columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(cast("ColumnElement[bool]", self.model.id == id))
         if order_by is not None:
             stmt = stmt.order_by(*order_by)
+        if options is not None:
+            stmt = stmt.options(*options)
         result = session.execute(stmt)
 
         return result
@@ -72,12 +78,15 @@ class BaseReadRepository[T](BaseRepository[T]):
         filters: Sequence,
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[str] | None = None,
+        options: Sequence = None,
     ) -> _P:
         columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(*filters).fetch(size).offset(page * size)
         if order_by is not None:
             stmt = stmt.order_by(*order_by)
+        if options is not None:
+            stmt = stmt.options(*options)
         results = session.execute(stmt)
 
         return results
@@ -87,10 +96,13 @@ class BaseReadRepository[T](BaseRepository[T]):
         session: Session,
         filters: Sequence,
         order_by: list[str] | None = None,
+        options: Sequence = None,
     ) -> _IP:
         stmt = select(self.model).where(*filters)
         if order_by is not None:
             stmt = stmt.order_by(*order_by)
+        if options is not None:
+            stmt = stmt.options(*options)
         result = session.execute(stmt)
 
         return result
@@ -153,12 +165,15 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         filters: Sequence,
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[str] | None = None,
+        options: Sequence = None,
     ) -> _P:
         columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(*filters)
         if order_by is not None:
             stmt = stmt.order_by(*order_by)
+        if options is not None:
+            stmt = stmt.options(*options)
         result = await session.execute(stmt)
 
         return result
@@ -169,12 +184,15 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         id: int | str,
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[SQLColumnExpression] | None = None,
+        options: Sequence = None,
     ) -> _P:
         columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(cast("ColumnElement[bool]", self.model.id == id))
         if order_by is not None:
             stmt = stmt.order_by(*order_by)
+        if options is not None:
+            stmt = stmt.options(*options)
         result = await session.execute(stmt)
 
         return result
@@ -187,12 +205,15 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         filters: Sequence,
         columns: list[SQLColumnExpression] | None = None,
         order_by: list[SQLColumnExpression] | None = None,
+        options: Sequence = None,
     ) -> _P:
         columns = columns or (self.model.__table__,)
 
         stmt = select(*columns).where(*filters).fetch(size).offset(page * size)
         if order_by is not None:
             stmt = stmt.order_by(*order_by)
+        if options is not None:
+            stmt = stmt.options(*options)
         results = await session.execute(stmt)
 
         return results
@@ -202,10 +223,13 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         session: AsyncSession,
         filters: Sequence,
         order_by: list[str] | None = None,
+        options: Sequence = None,
     ) -> _IP:
         stmt = select(self.model).where(*filters)
         if order_by is not None:
             stmt = stmt.order_by(*order_by)
+        if options is not None:
+            stmt = stmt.options(*options)
         result = await session.execute(stmt)
 
         return result

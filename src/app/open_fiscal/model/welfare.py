@@ -161,7 +161,7 @@ class GovWelfare(Base):
     JA0403: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="Single-parent / Grandparent families")
     JA0404: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="Single-person households")
     JA0410: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="Not applicable")
-    JA0411: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="Large families")
+    JA0411: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="Multi Child Family")
     JA0412: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="Homeless households")
     JA0413: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="New residents")
     JA0414: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="Extended families")
