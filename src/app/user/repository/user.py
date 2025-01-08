@@ -1,7 +1,7 @@
 from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.user.model.user import User
+from src.app.user.model.user import Profile, User
 from src.core.models.repository import (
     ABaseCreateRepository,
     ABaseDeleteRepository,
@@ -15,14 +15,14 @@ class UserCreateRepository(ABaseCreateRepository[User]):
 
 
 class UserReadRepository(ABaseReadRepository[User]):
-    async def get_unique_fields(self, session: AsyncSession, email: str, handle: str):
+    async def get_unique_fields(self, session: AsyncSession, email: str, username: str):
         result = await self.get(
             session,
-            columns=[self.model.email, self.model.handle],
+            columns=[self.model.email, self.model.username],
             filters=[
                 or_(
                     self.model.email == email,
-                    self.model.handle == handle,
+                    self.model.username == username,
                 ),
             ],
         )
@@ -36,11 +36,11 @@ class UserReadRepository(ABaseReadRepository[User]):
         )
         return result
 
-    async def get_user_by_handle(self, session: AsyncSession, handle: str):
+    async def get_user_by_handle(self, session: AsyncSession, username: str):
         result = await self.get(
             session,
             columns=[self.model.id, self.model.password],
-            filters=[self.model.handle == handle],
+            filters=[self.model.username == username],
         )
         return result
 
@@ -53,5 +53,35 @@ class UserDeleteRepository(ABaseDeleteRepository[User]):
     pass
 
 
-class UserRepository(UserCreateRepository, UserReadRepository, UserUpdateRepository, UserDeleteRepository):
+class UserRepository(
+    UserCreateRepository,
+    UserReadRepository,
+    UserUpdateRepository,
+    UserDeleteRepository,
+):
+    pass
+
+
+class ProfileCreateRepository(ABaseCreateRepository[Profile]):
+    pass
+
+
+class ProfileReadRepository(ABaseReadRepository[Profile]):
+    pass
+
+
+class ProfileUpdateRepository(ABaseUpdateRepository[Profile]):
+    pass
+
+
+class ProfileDeleteRepository(ABaseDeleteRepository[Profile]):
+    pass
+
+
+class ProfileRepository(
+    ProfileCreateRepository,
+    ProfileReadRepository,
+    ProfileUpdateRepository,
+    ProfileDeleteRepository,
+):
     pass

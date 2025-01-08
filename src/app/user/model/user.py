@@ -2,22 +2,17 @@ import datetime
 import enum
 from typing import Optional
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, func
-from sqlalchemy.ext.mutable import MutableSet
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, ForeignKeyConstraint, Integer, LargeBinary, String, func
+from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.app.user.model.user_data import UserData
 from src.core.models.base import Base
-from src.core.models.helper import IntEnum
 
 
 class Gender(enum.Enum):
     male = 0
     female = 1
-
-
-class GenderT(IntEnum):
-    _enum_type = Gender
 
 
 class User(Base):
@@ -26,7 +21,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
     email: Mapped[str] = mapped_column(String(255), unique=True)
-    handle: Mapped[str] = mapped_column(String(255), unique=True)
+    username: Mapped[str] = mapped_column(String(255), unique=True)
     password: Mapped[str] = mapped_column(String(255))
 
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
@@ -49,11 +44,11 @@ class Profile(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    sex: Mapped["Gender"] = mapped_column(GenderT)
+    sex: Mapped[Optional[int]] = mapped_column(Integer)
     birthday: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-    profile: Mapped[str] = mapped_column(String(255))
+    profile: Mapped[Optional[str]] = mapped_column(String(255))
     bio: Mapped[Optional[str]] = mapped_column(String(255))
-    link: Mapped[Optional[list]] = mapped_column(MutableSet.as_mutable(JSON))
+    link: Mapped[Optional[list]] = mapped_column(String(255))
 
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
     user: Mapped["User"] = relationship("User", back_populates="profile")

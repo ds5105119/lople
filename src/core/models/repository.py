@@ -16,9 +16,16 @@ class BaseRepository[T]:
     def __init__(self, model: type[T]):
         self.model = model
 
+    def _dict_to_model(self, kwargs: Any) -> Any:
+        return {
+            k: self.model.__mapper__.relationships[k].mapper.class_(**v) if isinstance(v, dict) else v
+            for k, v in kwargs.items()
+        }
+
 
 class BaseCreateRepository[T](BaseRepository[T]):
     def create(self, session: Session, **kwargs: Any) -> T:
+        kwargs = self._dict_to_model(kwargs)
         session.add(entity := self.model(**kwargs))
         session.commit()
         session.refresh(self.model)
@@ -110,13 +117,15 @@ class BaseReadRepository[T](BaseRepository[T]):
 
 class BaseUpdateRepository[T](BaseRepository[T]):
     def update(self, session: Session, filters: Sequence, **kwargs) -> None:
-        query = update(self.model).where(*filters).values(**kwargs)
-        session.execute(query)
+        kwargs = self._dict_to_model(kwargs)
+        stmt = update(self.model).where(*filters).values(**kwargs)
+        session.execute(stmt)
         session.commit()
 
     def update_by_id(self, session: Session, id: int | str, **kwargs) -> None:
-        query = update(self.model).where(cast("ColumnElement[bool]", self.model.id == id)).values(**kwargs)
-        session.execute(query)
+        kwargs = self._dict_to_model(kwargs)
+        stmt = update(self.model).where(cast("ColumnElement[bool]", self.model.id == id)).values(**kwargs)
+        session.execute(stmt)
         session.commit()
 
 
@@ -146,6 +155,7 @@ class ABaseRepository[T](BaseRepository[T]):
 
 class ABaseCreateRepository[T](ABaseRepository[T]):
     async def create(self, session: AsyncSession, **kwargs: Any) -> T:
+        kwargs = self._dict_to_model(kwargs)
         session.add(entity := self.model(**kwargs))
         await session.commit()
         await session.refresh(entity)
@@ -237,13 +247,15 @@ class ABaseReadRepository[T](ABaseRepository[T]):
 
 class ABaseUpdateRepository[T](ABaseRepository[T]):
     async def update(self, session: AsyncSession, filters: Sequence, **kwargs) -> None:
-        query = update(self.model).where(*filters).values(**kwargs)
-        await session.execute(query)
+        kwargs = self._dict_to_model(kwargs)
+        stmt = update(self.model).where(*filters).values(**kwargs)
+        await session.execute(stmt)
         await session.commit()
 
     async def update_by_id(self, session: AsyncSession, id: int | str, **kwargs) -> None:
-        query = update(self.model).where(cast("ColumnElement[bool]", self.model.id == id)).values(**kwargs)
-        await session.execute(query)
+        kwargs = self._dict_to_model(kwargs)
+        stmt = update(self.model).where(cast("ColumnElement[bool]", self.model.id == id)).values(**kwargs)
+        await session.execute(stmt)
         await session.commit()
 
 
