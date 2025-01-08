@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from .open_fiscal.api.endpoint.fiscal import router as fiscal_router
-from .open_fiscal.api.endpoint.welfare import router as welfare_router
+from .open_api.api.endpoint.fiscal import router as fiscal_router
+from .open_api.api.endpoint.welfare import router as welfare_router
 from .user.api.endpoint.user import router as user_router
 from .user.api.endpoint.user_data import router as user_data_router
 

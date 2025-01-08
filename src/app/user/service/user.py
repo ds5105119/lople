@@ -21,11 +21,9 @@ class UserService:
 
     @staticmethod
     def _user_to_claim(user):
-        return {
-            "sub": str(user.id),
-        }
+        return {"sub": str(user.id)}
 
-    async def _get_user(self, session: postgres_session, auth_data) -> User:
+    async def _fetch_user(self, session: postgres_session, auth_data) -> User | None:
         user_data = await self.user_repository.get_instance(
             session,
             [self.user_repository.model.id == int(auth_data.identifier)],
@@ -34,7 +32,7 @@ class UserService:
 
         return user_data.scalar()
 
-    async def _issue_tokens(self, db_user):
+    async def _generate_tokens(self, db_user) -> tuple[str, str]:
         """
         Parameters:
             db_user: 유저 데이터. PK 필수
@@ -44,7 +42,7 @@ class UserService:
         payload = self._user_to_claim(db_user)
         return await self.jwt_service.create_token(payload)
 
-    async def _is_register_valid(self, data: RegisterDto, session: postgres_session):
+    async def _validate_registration(self, data: RegisterDto, session: postgres_session):
         """
         Parameters:
             data: register.RegisterDto
@@ -62,6 +60,15 @@ class UserService:
 
         return user
 
+    def _validate_password(self, stored_password: str, input_password: str) -> None:
+        try:
+            self.password_hasher.verify(stored_password, input_password)
+        except (argon2.exceptions.Argon2Error, AttributeError, ValueError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials provided.",
+            )
+
     async def _is_login_valid(self, data: LoginDto, session: postgres_session):
         """
         Parameters:
@@ -75,17 +82,15 @@ class UserService:
         else:
             user = await self.user_repository.get_user_by_handle(session, data.username)
 
-        user = user.mappings().first()
-
-        try:
-            self.password_hasher.verify(user.password, data.password)
-        except (argon2.exceptions.Argon2Error, AttributeError, ValueError):
+        user_data = user.mappings().first()
+        if not user_data:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Can not find user",
+                detail="Invalid credentials provided.",
             )
 
-        return user
+        self._validate_password(user_data.password, user_data.password)
+        return user_data
 
     async def register_user(self, data: RegisterDto, session: postgres_session):
         """
@@ -96,13 +101,13 @@ class UserService:
         Returns:
             tuple: access, refresh 토큰
         """
-        user = await self._is_register_valid(data, session)
+        user = await self._validate_registration(data, session)
 
         data = data.model_dump(by_alias=True)
         data["password"] = self.password_hasher.hash(data["password"])
         user = await self.user_repository.create(session, **data)
 
-        access, refresh = await self._issue_tokens(user)
+        access, refresh = await self._generate_tokens(user)
         return access, refresh
 
     async def login_user(self, data: LoginDto, session: postgres_session):
@@ -116,7 +121,7 @@ class UserService:
         """
         user = await self._is_login_valid(data, session)
 
-        access, refresh = await self._issue_tokens(user)
+        access, refresh = await self._generate_tokens(user)
         return access, refresh
 
     async def update_profile(

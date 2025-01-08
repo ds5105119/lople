@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.app.open_fiscal.api.dependencies import (
+from src.app.open_api.api.dependencies import (
     fiscal_data_manager,
     gov24_service_conditions_manager,
     gov24_service_detail_manager,

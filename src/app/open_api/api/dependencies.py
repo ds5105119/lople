@@ -1,6 +1,6 @@
-from src.app.open_fiscal.model.welfare import GovWelfare, GovWelfareSaver
-from src.app.open_fiscal.repository.welfare import GovWelfareRepository
-from src.app.open_fiscal.service.welfare import GovWelfareService
+from src.app.open_api.model.welfare import GovWelfare, GovWelfareSaver
+from src.app.open_api.repository.welfare import GovWelfareRepository
+from src.app.open_api.service.welfare import GovWelfareService
 from src.app.user.api.dependencies import user_repository
 from src.core.config import settings
 from src.core.dependencies.db import Postgres_sync, Redis

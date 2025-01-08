@@ -1,5 +1,5 @@
-from src.app.open_fiscal.repository.fiscal import FiscalRepository
-from src.app.open_fiscal.schema.fiscal import FiscalQuery
+from src.app.open_api.repository.fiscal import FiscalRepository
+from src.app.open_api.schema.fiscal import FiscalQuery
 
 
 class FiscalService:

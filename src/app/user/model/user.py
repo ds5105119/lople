@@ -2,8 +2,7 @@ import datetime
 import enum
 from typing import Optional
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, ForeignKeyConstraint, Integer, LargeBinary, String, func
-from sqlalchemy.ext.mutable import MutableList
+from sqlalchemy import Boolean, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.app.user.model.user_data import UserData
