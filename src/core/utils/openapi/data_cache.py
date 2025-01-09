@@ -22,7 +22,7 @@ class BaseDataCache(ABC):
         """
         캐시로부터 데이터를 불러옵니다.
 
-        Parameters:
+        Args:
             key (str): Cache Key
         """
         pass
@@ -32,7 +32,7 @@ class BaseDataCache(ABC):
         """
         캐시에 대이터를 저장합니다.
 
-        Parameters:
+        Args:
             key (str): Cache Key
             value (dict): Cache Value
         """

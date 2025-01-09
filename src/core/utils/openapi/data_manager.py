@@ -38,7 +38,7 @@ class BaseDataManager(ABC):
         """
         BaseDataManager 의 데이터의 변경을 감지해야 하는 경우 콜백 함수를 등록하여 사용할 수 있습니다.
 
-        Parameters:
+        Args:
             callback: 콜백
         """
         pass

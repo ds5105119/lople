@@ -28,7 +28,6 @@ class ExtendOAuth2AuthorizationCodeBearer(OAuth2AuthorizationCodeBearer):
 class ExtendHTTPBearer(HTTPBearer):
     async def __call__(self, request: Request) -> Optional[str]:
         auth = request.scope.get("auth")
-
         return auth
 
 

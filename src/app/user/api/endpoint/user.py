@@ -1,31 +1,39 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
 
 from src.app.user.api.dependencies import user_service
-from src.app.user.schema.user import LoginResponse
+from src.app.user.schema.user import LoginResponse, TokenDto
 
 router = APIRouter()
 
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def login(
-    tokens: Annotated[tuple[str, str], Depends(user_service.login_user)],
-    response: Response,
+    response: Annotated[LoginResponse, Depends(user_service.login_user)],
 ) -> LoginResponse:
-    access, refresh = tokens
-    response.set_cookie(key="refresh", value=refresh, httponly=True)
-    return LoginResponse(access=access)
+    return response
 
 
 @router.post("/register", status_code=status.HTTP_200_OK)
 async def register(
-    tokens: Annotated[tuple[str, str], Depends(user_service.register_user)],
-    response: Response,
+    response: Annotated[LoginResponse, Depends(user_service.register_user)],
 ) -> LoginResponse:
-    access, refresh = tokens
-    response.set_cookie(key="refresh", value=refresh, httponly=True)
-    return LoginResponse(access=access)
+    return response
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(
+    _: Annotated[None, Depends(user_service.logout_user)],
+):
+    pass
+
+
+@router.post("/refresh", status_code=status.HTTP_200_OK)
+async def refresh_tokens(
+    response: Annotated[TokenDto, Depends(user_service.refresh_tokens)],
+) -> TokenDto:
+    return response
 
 
 @router.post("/profile", status_code=status.HTTP_200_OK)

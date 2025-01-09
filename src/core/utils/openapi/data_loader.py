@@ -54,7 +54,7 @@ class BaseOpenDataLoader(ABC):
     @abstractmethod
     async def get_data(self, path: str, params: dict | None = None) -> dict | list[dict]:
         """
-        Parameters:
+        Args:
             path: API Endpoint
             params: API Query Params
 

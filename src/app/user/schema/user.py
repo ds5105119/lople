@@ -4,6 +4,7 @@ from argon2 import PasswordHasher
 from pydantic import (
     AnyUrl,
     BaseModel,
+    ConfigDict,
     EmailStr,
     Field,
     PastDate,
@@ -30,6 +31,8 @@ class ProfileDto(BaseModel):
     profile: Annotated[HttpUrl, PlainSerializer(lambda x: x.unicode_string(), return_type=str)]
     bio: str = Field(min_length=0, max_length=120)
     link: Annotated[HttpUrl, PlainSerializer(lambda x: x.unicode_string(), return_type=str)]
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 @partial_model
@@ -74,6 +77,23 @@ class LoginDto(BaseModel):
         return self
 
 
-class LoginResponse(BaseModel):
+class RefreshDto(BaseModel):
+    refresh: str
+
+
+class TokenDto(BaseModel):
     access: str
     refresh: str | None = None
+
+
+class LoginResponseUser(BaseModel):
+    username: str
+    email: EmailStr
+    resignation_reason: str | None = None
+    profile: PartialProfileDto
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LoginResponse(TokenDto):
+    user: LoginResponseUser

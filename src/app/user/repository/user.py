@@ -1,5 +1,6 @@
 from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.app.user.model.user import Profile, User
 from src.core.models.repository import (
@@ -29,18 +30,18 @@ class UserReadRepository(ABaseReadRepository[User]):
         return result
 
     async def get_user_by_email(self, session: AsyncSession, email: str):
-        result = await self.get(
+        result = await self.get_instance(
             session,
-            columns=[self.model.id, self.model.password],
             filters=[self.model.email == email],
+            options=[selectinload(self.model.profile)],
         )
         return result
 
     async def get_user_by_handle(self, session: AsyncSession, username: str):
-        result = await self.get(
+        result = await self.get_instance(
             session,
-            columns=[self.model.id, self.model.password],
             filters=[self.model.username == username],
+            options=[selectinload(self.model.profile)],
         )
         return result
 
