@@ -30,7 +30,7 @@ class GovWelfareService:
         )
 
     def _age_filter(self, user: User):
-        if user.profile and user.profile.birthday:
+        if user.profile is not None and user.profile.birthday is not None:
             now = datetime.now()
             age = now.year - user.profile.birthday.year
             age = age if now.month >= user.profile.birthday.month and now.day >= user.profile.birthday.day else age - 1
@@ -149,13 +149,17 @@ class GovWelfareService:
             user = await self._get_user(session, auth)
 
         if user:
-            if f := self._age_filter(user) is not None:
+            f = self._age_filter(user)
+            if f is not None:
                 filters.append(f)
-            if f := self._family_status_filter(user) is not None:
+            f = self._family_status_filter(user)
+            if f is not None:
                 filters.append(f)
-            if f := self._life_status_filter(user) is not None:
+            f = self._life_status_filter(user)
+            if f is not None:
                 filters.append(f)
-            if f := self._primary_industry_status_filter(user) is not None:
+            f = self._primary_industry_status_filter(user)
+            if f is not None:
                 filters.append(f)
 
         result = await self.repository.get_page(
