@@ -40,7 +40,7 @@ class GovWelfareSaver(PostgresDataSaver):
         df = df.drop(["서비스ID", "자치법규", "행정규칙", "문의처", "서비스목적", "접수기관명"], strict=False)
         df = df.filter(df["user_type"].str.contains("개인"))
         df = cast_y_null_to_bool(df)
-        df = df.with_columns(pl.col("views").cast(pl.Int32))
+        df = df.with_columns(pl.col("views").fill_null("0").cast(pl.Int32))
         df = df.with_columns(
             pl.col("created_at").str.strptime(dtype=pl.Datetime, format="%Y%m%d%H%M%S").alias("created_at"),
             pl.col("updated_at").str.strptime(dtype=pl.Datetime, format="%Y%m%d%H%M%S").alias("updated_at"),
