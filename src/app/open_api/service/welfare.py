@@ -20,16 +20,14 @@ class GovWelfareService:
         self.user_repository = user_repository
 
     async def _get_user(self, session: postgres_session, auth_data) -> User:
-        user_data = await self.user_repository.get_instance(
+        return await self.user_repository.get_user_by_auth_data(
             session,
-            [self.user_repository.model.id == int(auth_data.identifier)],
+            auth_data,
             options=[
                 selectinload(self.user_repository.model.user_data),
                 selectinload(self.user_repository.model.profile),
             ],
         )
-
-        return user_data.scalar()
 
     def _age_filter(self, user: User):
         if user.profile and user.profile.birthday:

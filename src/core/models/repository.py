@@ -3,6 +3,7 @@ from typing import Any, Sequence, TypeVar, cast
 from sqlalchemy import Result, SQLColumnExpression, delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.sql.base import ExecutableOption
 from sqlalchemy.sql.selectable import Select
 
 T = TypeVar("T", bound=DeclarativeBase)
@@ -44,9 +45,9 @@ class BaseReadRepository[T](BaseRepository[T]):
         self,
         session: Session,
         filters: Sequence,
-        columns: list[SQLColumnExpression] | None = None,
-        orderby: list[str] | None = None,
-        options: Sequence = None,
+        columns: Sequence[SQLColumnExpression] | None = None,
+        orderby: Sequence[str] | None = None,
+        options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
     ) -> _P:
         if stmt is None:
@@ -177,9 +178,9 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         self,
         session: AsyncSession,
         filters: Sequence,
-        columns: list[SQLColumnExpression] | None = None,
-        orderby: list[str] | None = None,
-        options: Sequence = None,
+        columns: Sequence[SQLColumnExpression] | None = None,
+        orderby: Sequence[str] | None = None,
+        options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
     ) -> _P:
         if stmt is None:

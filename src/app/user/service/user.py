@@ -1,9 +1,8 @@
-from typing import Annotated, cast
+from typing import cast
 
 import argon2
-from fastapi import Cookie, Depends, HTTPException, Request, Response, status
-from sqlalchemy.orm import selectinload
-from webtool.auth import AuthData, JWTService
+from fastapi import Depends, HTTPException, Request, Response, status
+from webtool.auth import JWTService
 
 from src.app.user.model.user import User
 from src.app.user.repository.user import ProfileRepository, UserRepository
@@ -12,7 +11,6 @@ from src.app.user.schema.user import (
     LoginResponse,
     LoginResponseUser,
     PartialProfileDto,
-    RefreshDto,
     RegisterDto,
     TokenDto,
 )
@@ -37,26 +35,6 @@ class UserService:
     @staticmethod
     def _user_to_claim(user):
         return {"sub": str(user.id)}
-
-    async def _fetch_user(
-        self,
-        session: postgres_session,
-        auth_data: Annotated[AuthData, Depends(get_current_user)],
-    ) -> User | None:
-        """
-        Args:
-            session: Annotated 된 AsyncSession Generator
-            auth_data: webtool.AuthData
-
-        Returns: User | None
-        """
-        user = await self.user_repository.get_instance(
-            session,
-            [self.user_repository.model.id == int(auth_data.identifier)],
-            options=[selectinload(self.user_repository.model.profile)],
-        )
-
-        return user.scalar()
 
     def _get_refresh_token(self, request: Request):
         """
@@ -97,7 +75,6 @@ class UserService:
 
         Args:
             refresh: 기존 발급된 refresh token
-            user: db 내 User 스칼라. PK 필수
 
         Returns:
             access, refresh 토큰 (Webtool)
@@ -218,6 +195,7 @@ class UserService:
         data["password"] = self.password_hasher.hash(data["password"])
 
         user = await self.user_repository.create(session, **data)
+        await session.refresh(user, attribute_names=["profile"])
         return await self._generate_login_response(response, user)
 
     async def login_user(self, data: LoginDto, session: postgres_session, response: Response) -> LoginResponse:
@@ -249,5 +227,7 @@ class UserService:
     ):
         data = data.model_dump()
         await self.profile_repository.update(
-            session, [self.profile_repository.model.user_id == int(auth_data.identifier)], **data
+            session,
+            filters=[self.profile_repository.model.user_id == int(auth_data.identifier)],
+            **data,
         )

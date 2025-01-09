@@ -1,6 +1,10 @@
+from typing import Sequence
+
 from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.base import ExecutableOption
+from webtool.auth import AuthData
 
 from src.app.user.model.user import Profile, User
 from src.core.models.repository import (
@@ -44,6 +48,29 @@ class UserReadRepository(ABaseReadRepository[User]):
             options=[selectinload(self.model.profile)],
         )
         return result
+
+    async def get_user_by_auth_data(
+        self,
+        session: AsyncSession,
+        auth_data: AuthData,
+        options: Sequence[ExecutableOption] = None,
+    ) -> User | None:
+        """
+        Args:
+            session: Annotated 된 AsyncSession Generator
+            auth_data: webtool.AuthData
+            options: sqlalchemy.sql.base.ExecutableOption
+
+        Returns: User | None
+        """
+        options = [selectinload(self.model.profile)] if options is None else options
+        user = await self.get_instance(
+            session,
+            filters=[self.model.id == int(auth_data.identifier)],
+            options=options,
+        )
+
+        return user.scalar()
 
 
 class UserUpdateRepository(ABaseUpdateRepository[User]):
