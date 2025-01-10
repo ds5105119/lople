@@ -38,6 +38,10 @@ oauth_authcode_schema = ExtendOAuth2AuthorizationCodeBearer(
 )
 http_bearer = ExtendHTTPBearer()
 
+google_oauth_schema = ExtendOAuth2AuthorizationCodeBearer(
+    tokenUrl="https://oauth2.googleapis.com/token",
+    authorizationUrl="https://accounts.google.com/o/oauth2/v2/auth",
+)
 
 async def get_current_user(
     auth_data: Annotated[AuthData, Depends(http_bearer, use_cache=False)],

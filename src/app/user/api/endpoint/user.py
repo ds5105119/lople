@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, status
 from src.app.user.api.dependencies import user_service
 from src.app.user.schema.user import LoginResponse, TokenDto
 
+
 router = APIRouter()
 
 
@@ -41,3 +42,4 @@ async def update_profile(
     _: Annotated[None, Depends(user_service.update_profile)],
 ):
     pass
+

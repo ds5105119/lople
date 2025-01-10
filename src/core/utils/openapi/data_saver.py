@@ -6,7 +6,7 @@ import sqlalchemy
 from sqlalchemy import Column, Index, Integer, MetaData, Table, delete
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase
-from webtool.db import SyncDB
+from webtool.db import AsyncDB
 
 from .data_manager import BaseDataManager
 
@@ -27,7 +27,7 @@ class PostgresDataSaver(BaseDataSaver):
     def __init__(
         self,
         *data: BaseDataManager,
-        db: SyncDB,
+        db: AsyncDB,
         table: type[T],
     ):
         self.db = db
