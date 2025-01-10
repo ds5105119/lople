@@ -21,6 +21,7 @@ class BaseDataSaver(ABC):
     @abstractmethod
     def build(self):
         pass
+        pass
 
 
 class PostgresDataSaver(BaseDataSaver):
