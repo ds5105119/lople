@@ -1,26 +1,16 @@
-from typing import Any
+from sqlalchemy import event
+from sqlalchemy.orm import ORMExecuteState, Session, with_loader_criteria
 
-from sqlalchemy import Integer, TypeDecorator
+from src.app.user.model.user import User
 
 
-class IntEnum(TypeDecorator):
-    """
-    Enables passing in a Python enum and storing the enum's *value* in the db.
-    The default would have stored the enum's *name* (ie the string).
-    """
-
-    impl = Integer
-    cache_ok = True
-
-    _enum_type: Any
-
-    def __init__(self, *args, **kwargs):
-        super(IntEnum, self).__init__(*args, **kwargs)
-
-    def process_bind_param(self, value, dialect):
-        if isinstance(value, int):
-            return value
-        raise ValueError("value must be an integer")
-
-    def process_result_value(self, value, dialect):
-        return value
+@event.listens_for(Session, "do_orm_execute")
+def _do_orm_execute(orm_execute_state: ORMExecuteState):
+    if orm_execute_state.is_select and not orm_execute_state.is_column_load:
+        orm_execute_state.statement = orm_execute_state.statement.options(
+            with_loader_criteria(
+                User,
+                User.is_deleted is False,
+                User.is_active is True,
+            )
+        )

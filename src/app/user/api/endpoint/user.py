@@ -36,7 +36,7 @@ async def refresh_tokens(
     return response
 
 
-@router.post("/profile", status_code=status.HTTP_200_OK)
+@router.patch("/profile", status_code=status.HTTP_200_OK)
 async def update_profile(
     _: Annotated[None, Depends(user_service.update_profile)],
 ):

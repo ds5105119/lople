@@ -21,7 +21,7 @@ class UserDataService:
             await self.repository.create(
                 session,
                 user_id=int(auth_data.identifier),
-                **data.model_dump(),
+                **data.model_dump(exclude_unset=True),
             )
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
@@ -47,5 +47,5 @@ class UserDataService:
         await self.repository.update(
             session,
             [self.repository.model.user_id == int(auth_data.identifier)],
-            **data.model_dump(),
+            **data.model_dump(exclude_unset=True),
         )

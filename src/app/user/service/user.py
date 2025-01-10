@@ -231,3 +231,17 @@ class UserService:
             filters=[self.profile_repository.model.user_id == int(auth_data.identifier)],
             **data,
         )
+
+    async def delete_user(self, session: postgres_session, auth_data=Depends(get_current_user)):
+        await self.user_repository.update(
+            session,
+            filters=[self.user_repository.model.id == int(auth_data.identifier)],
+            is_deleted=True,
+        )
+
+    async def inactive_user(self, session: postgres_session, auth_data=Depends(get_current_user)):
+        await self.user_repository.update(
+            session,
+            filters=[self.user_repository.model.id == int(auth_data.identifier)],
+            is_active=False,
+        )

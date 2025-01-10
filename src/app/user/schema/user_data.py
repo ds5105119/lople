@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from src.app.user.model.user_data import AcademicStatus, LifeStatus, PrimaryIndustryStatus, WorkingStatus
 from src.core.utils.pydantichelper import partial_model
@@ -6,6 +6,7 @@ from src.core.utils.pydantichelper import partial_model
 
 class UserDataDto(BaseModel):
     overcome: int
+    household_size: int
 
     multicultural: bool
     north_korean: bool
@@ -13,16 +14,18 @@ class UserDataDto(BaseModel):
     homeless: bool
     new_resident: bool
     multi_child_family: bool
-    single_family: bool
     extend_family: bool
+
+    disable: bool
+    veteran: bool
+    disease: bool
 
     life_status: LifeStatus
     primary_industry_status: PrimaryIndustryStatus
-    academic_status: WorkingStatus
-    working_status: AcademicStatus
+    academic_status: AcademicStatus
+    working_status: WorkingStatus
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 @partial_model

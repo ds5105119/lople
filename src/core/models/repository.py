@@ -4,6 +4,7 @@ from sqlalchemy import Result, SQLColumnExpression, delete, insert, select, upda
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Session
 from sqlalchemy.sql.base import ExecutableOption
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.sql.selectable import Select
 
 T = TypeVar("T", bound=DeclarativeBase)
@@ -46,7 +47,7 @@ class BaseReadRepository[T](BaseRepository[T]):
         session: Session,
         filters: Sequence,
         columns: Sequence[SQLColumnExpression] | None = None,
-        orderby: Sequence[str] | None = None,
+        orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
     ) -> _P:
@@ -68,9 +69,9 @@ class BaseReadRepository[T](BaseRepository[T]):
         self,
         session: Session,
         id: int | str,
-        columns: list[SQLColumnExpression] | None = None,
-        orderby: list[str] | None = None,
-        options: Sequence = None,
+        columns: Sequence[SQLColumnExpression] | None = None,
+        orderby: Sequence[ColumnElement] | None = None,
+        options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
     ) -> _P:
         if not hasattr(self.model, "id"):
@@ -91,9 +92,9 @@ class BaseReadRepository[T](BaseRepository[T]):
         page: int,
         size: int,
         filters: Sequence,
-        columns: list[SQLColumnExpression] | None = None,
-        orderby: list[str] | None = None,
-        options: Sequence = None,
+        columns: Sequence[SQLColumnExpression] | None = None,
+        orderby: Sequence[ColumnElement] | None = None,
+        options: Sequence[ExecutableOption] = None,
     ) -> _P:
         return self.get(
             session=session,
@@ -108,8 +109,8 @@ class BaseReadRepository[T](BaseRepository[T]):
         self,
         session: Session,
         filters: Sequence,
-        orderby: list[str] | None = None,
-        options: Sequence = None,
+        orderby: Sequence[ColumnElement] | None = None,
+        options: Sequence[ExecutableOption] = None,
     ) -> _IP:
         return self.get(
             session=session,
@@ -179,7 +180,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         session: AsyncSession,
         filters: Sequence,
         columns: Sequence[SQLColumnExpression] | None = None,
-        orderby: Sequence[str] | None = None,
+        orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
     ) -> _P:
@@ -202,9 +203,9 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         self,
         session: AsyncSession,
         id: int | str,
-        columns: list[SQLColumnExpression] | None = None,
-        orderby: list[str] | None = None,
-        options: Sequence = None,
+        columns: Sequence[SQLColumnExpression] | None = None,
+        orderby: Sequence[ColumnElement] | None = None,
+        options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
     ) -> _P:
         if not hasattr(self.model, "id"):
@@ -225,9 +226,9 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         page: int,
         size: int,
         filters: Sequence,
-        columns: list[SQLColumnExpression] | None = None,
-        orderby: list[str] | None = None,
-        options: Sequence = None,
+        columns: Sequence[SQLColumnExpression] | None = None,
+        orderby: Sequence[ColumnElement] | None = None,
+        options: Sequence[ExecutableOption] = None,
     ) -> _P:
         return await self.get(
             session=session,
@@ -242,8 +243,8 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         self,
         session: AsyncSession,
         filters: Sequence,
-        orderby: list[str] | None = None,
-        options: Sequence = None,
+        orderby: Sequence[ColumnElement] | None = None,
+        options: Sequence[ExecutableOption] = None,
     ) -> _IP:
         return await self.get(
             session=session,

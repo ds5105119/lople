@@ -26,13 +26,13 @@ class HttpUrl(AnyUrl):
 
 
 class ProfileDto(BaseModel):
-    sex: Annotated[Gender, PlainSerializer(lambda x: x.value, return_type=int)]
     birthday: PastDate
-    profile: Annotated[HttpUrl, PlainSerializer(lambda x: x.unicode_string(), return_type=str)]
     bio: str = Field(min_length=0, max_length=120)
-    link: Annotated[HttpUrl, PlainSerializer(lambda x: x.unicode_string(), return_type=str)]
+    sex: Gender
+    profile: HttpUrl
+    link: HttpUrl
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 
 @partial_model
