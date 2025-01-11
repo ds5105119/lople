@@ -55,10 +55,11 @@ class Settings(BaseSettings):
     redis: DataBaseConfig
 
     aws: AWS
-    oauth_google: OAuthConfig
 
     open_fiscal_data_api: ApiAdapter
     gov_24_data_api: ApiAdapter
+
+    oauth_google: OAuthConfig
 
     @property
     def postgres_dsn(self) -> PostgresDsn:
@@ -71,6 +72,11 @@ class Settings(BaseSettings):
     @property
     def redis_dsn(self) -> RedisDsn:
         return RedisDsn.build(scheme="redis", **self.redis.model_dump(by_alias=True))
+
+    @property
+    def google(self) -> OAuthConfig:
+        return self.oauth_google
+
 
     model_config = SettingsConfigDict(
         env_file=str(base_dir / ".env"),
