@@ -35,6 +35,13 @@ class AWS(BaseModel):
 class ApiAdapter(BaseModel):
     key: str
 
+class SocialOauth(BaseModel):
+    client_id: str
+    secret_key: str
+    redirect_uri: str
+    userinfo_url: str
+    token_url: str
+    authorization_url: str
 
 class Settings(BaseSettings):
     base_dir: Path = Path(__file__).resolve().parent.parent.parent
@@ -59,7 +66,7 @@ class Settings(BaseSettings):
     open_fiscal_data_api: ApiAdapter
     gov_24_data_api: ApiAdapter
 
-    oauth_google: OAuthConfig
+    oauth_google: SocialOauth
 
     @property
     def postgres_dsn(self) -> PostgresDsn:
@@ -74,7 +81,7 @@ class Settings(BaseSettings):
         return RedisDsn.build(scheme="redis", **self.redis.model_dump(by_alias=True))
 
     @property
-    def google(self) -> OAuthConfig:
+    def google(self) -> SocialOauth:
         return self.oauth_google
 
 

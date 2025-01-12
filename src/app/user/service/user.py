@@ -189,6 +189,19 @@ class UserService:
         self._validate_password(user_data.password, data.password)
         return user_data
 
+    async def _get_user_by_email(self, session: postgres_session, email: str) -> User | None:
+        """
+        이메일로 유저를 검색
+
+        Args:
+            session: Session
+            email: 검색할 유저 이메일
+
+        Returns:
+            User 객체 또는 None
+        """
+        return await self.user_repository.get_user_by_email(session, email)
+
     async def register_user(self, data: RegisterDto, session: postgres_session, response: Response) -> LoginResponse:
         user = await self._validate_registration(data, session)
         data = data.model_dump(by_alias=True)
