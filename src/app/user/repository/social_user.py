@@ -12,38 +12,52 @@ class SocialUserReadRepository(ABaseReadRepository[User]):
     Repository specialized in retrieving social users
     """
 
-    async def get_user(self, session: AsyncSession,
-                       email: str | None = None,
-                       social_provider: str | None = None,
-                       social_id: str | None = None
-                       ) -> User | None:
+    async def get_user(
+            self,
+            session: AsyncSession,
+            email: str | None = None,
+            social_provider: str | None = None,
+    ) -> tuple[User | None, str]:
         """
-        Retrieve a user based on email or social data.
+        Retrieve a user based on email and social provider.
 
         Args:
             session: The database session.
             email: The user's email to search with.
             social_provider: The social provider (e.g., "google").
-            social_id: The social ID linked to the provider.
 
         Returns:
-            User | None: The matched user or None if no user is found.
+            tuple: A tuple of (User, status).
+                   status:
+                   - "general" if user is a general user (social_provider is None).
+                   - "social" if user is a social user.
+                   - "not_found" if no user matches.
         """
         filters = []
+        status = "not_found"
 
-        if email:
+        if email and social_provider:
+            # Add both email and social_provider to filters
             filters.append(self.model.email == email)
-        if social_provider and social_id:
             filters.append(self.model.social_provider == social_provider)
-            filters.append(self.model.social_id == social_id)
+        elif email:
+            # Fallback to just email if social_provider is not provided
+            filters.append(self.model.email == email)
 
         # Retrieve user using combined filters
         user = await self.get_instance(
-            session,
+            session=session,
             filters=filters,
         )
-        return user.scalar()
 
+        user_instance = user.scalar()
+        if user_instance:
+            if user_instance.social_provider:
+                status = "social"
+            else:
+                status = "general"
+
+        return user_instance, status
 
 class SocialUserCreateRepository(ABaseCreateRepository[User]):
     """
