@@ -19,11 +19,15 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    google_id: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
+    user_type: Mapped[str] = mapped_column(String(50), default="general")  # e.g. "general" or "social"
+
+    social_provider: Mapped[Optional[str]] = mapped_column(String(50), nullable=True) # e.g., "google", "kakao"
+    social_id: Mapped[Optional[str]] = mapped_column(String(255), unique=True, nullable=True)
+
 
     email: Mapped[str] = mapped_column(String(255), unique=True)
     username: Mapped[str] = mapped_column(String(255), unique=True)
-    password: Mapped[str] = mapped_column(String(255))
+    password: Mapped[str] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, onupdate=func.now())
