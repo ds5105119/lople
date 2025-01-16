@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Union, Tuple, Any
 
 
 class SocialAuthBase(ABC):
@@ -19,7 +20,7 @@ class SocialAuthBase(ABC):
         pass
 
     @abstractmethod
-    async def get_user_info(self, access_token: str) -> dict:
+    async def get_user_info(self, access_token: str) -> Union[dict, Any]:
         """
         Access Token으로 사용자 정보를 가져옴
         Args:

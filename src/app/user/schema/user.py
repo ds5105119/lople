@@ -1,5 +1,5 @@
-from typing import Annotated
-
+from typing import Annotated, Optional
+from datetime import date
 from argon2 import PasswordHasher
 from pydantic import (
     AnyUrl,
@@ -97,3 +97,4 @@ class LoginResponseUser(BaseModel):
 
 class LoginResponse(TokenDto):
     user: LoginResponseUser
+

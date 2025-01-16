@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
-
+from fastapi import APIRouter
 
 router = APIRouter()
 
-@router.post(path="/{provider}", description="social login& register")
-async def social_auth(provider: str):
+
+@router.post("/oauth/google")
+async def google_auth():
     pass

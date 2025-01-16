@@ -12,7 +12,7 @@ from src.core.models.base import Base
 class Gender(enum.Enum):
     male = 0
     female = 1
-
+    other = 2
 
 class User(Base):
     __tablename__ = "user"
@@ -23,7 +23,6 @@ class User(Base):
 
     social_provider: Mapped[Optional[str]] = mapped_column(String(50), nullable=True) # e.g., "google", "kakao"
     social_id: Mapped[Optional[str]] = mapped_column(String(255), unique=True, nullable=True)
-
 
     email: Mapped[str] = mapped_column(String(255), unique=True)
     username: Mapped[str] = mapped_column(String(255), unique=True)

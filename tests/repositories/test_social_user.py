@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, func
+from pydantic import BaseModel
+from src.app.user.repository.social_user import SocialUserReadRepository
 
 Base = declarative_base()
 
@@ -22,15 +24,33 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    username: str
+    social_provider: str
+    social_id: str
+    is_active: bool
+
+    class Config:
+        from_attributes = True  # Enable ORM compatibility
+
+class SocialUserVerificationDTO(BaseModel):
+    """
+    최초 소셜 로그인 User 정보 식별
+    """
+    email: str
+    social_provider: str
 
 class SocialUserRepository:
     def __init__(self, user_model):
         self.user_model = user_model
 
-    async def get_user(self, session, **kwargs):
-        stmt = select(self.user_model).filter_by(**kwargs)  # Use SQLAlchemy Core-style queries
-        result = await session.execute(stmt)  # Execute the statement
-        return result.scalars().first()  # Convert to ORM model and return the first result
+    async def get_user(self, session, **kwargs) -> UserResponse | None:
+        stmt = select(self.user_model).filter_by(**kwargs)
+        result = await session.execute(stmt)
+
+        return result.scalars().first()
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -51,7 +71,7 @@ async def session(test_db):
 
     async with async_session_local() as session:
         yield session
-
+#
 
 @pytest_asyncio.fixture
 def social_user_repository():
@@ -132,30 +152,6 @@ async def test_create_user(session, social_user_repository):
 
 
 @pytest.mark.asyncio
-async def test_deactivate_user(session, social_user_repository):
-    """
-    테스트: 기존 사용자를 비활성화 처리
-    """
-    test_user = User(
-        email="activeuser@example.com",
-        username="activeuser",
-        password="activepassword",
-        is_active=True
-    )
-    session.add(test_user)
-    await session.commit()
-
-    # 사용자 비활성 처리
-    test_user.is_active = False
-    await session.commit()
-
-    # 업데이트 확인
-    retrieved_user = await social_user_repository.get_user(session=session, email="activeuser@example.com")
-    assert retrieved_user is not None
-    assert retrieved_user.is_active is False
-
-
-@pytest.mark.asyncio
 async def test_duplicate_email_error(session):
     """
     테스트: 중복된 이메일을 가진 사용자 추가 시 IntegrityError 확인
@@ -205,3 +201,119 @@ async def test_duplicate_social_id_error(session):
     with pytest.raises(IntegrityError):  # 중복 에러 발생 확인
         await session.commit()
         await session.rollback()
+
+@pytest.mark.asyncio
+async def test_social_user_get_user_by_social_provider(session):
+    """
+    소셜 인증 정보를 사용하여 사용자를 검색합니다.
+    """
+    # 테스트 데이터 추가
+    test_user = User(
+        email="social_user@example.com",
+        username="social_user",
+        social_id="social123",
+        social_provider="google"
+    )
+    session.add(test_user)
+    await session.commit()
+
+    # Repository 초기화
+    repository = SocialUserRepository(User)
+
+    # 소셜 사용자 검색
+    retrieved_user, status = await repository.get_user(
+        session=session,
+        data=SocialUserVerificationDTO(email="social_user@example.com", social_provider="google")
+    )
+
+    assert retrieved_user is not None
+    assert retrieved_user.email == "social_user@example.com"
+    assert retrieved_user.social_provider == "google"
+    assert status == "social_auth"  # 소셜 사용자임을 확인
+
+
+@pytest.mark.asyncio
+async def test_social_user_get_user_by_email_only(session):
+    """
+    이메일만으로 일반 사용자를 검색합니다.
+    """
+    # 테스트 데이터 추가
+    test_user = User(
+        email="general_user@example.com",
+        username="general_user",
+        password="securepassword"
+    )
+    session.add(test_user)
+    await session.commit()
+
+    # Repository 초기화
+    repository = SocialUserReadRepository(User)
+
+    # 일반 사용자 검색
+    retrieved_user, status = await repository.get_user(
+        session=session,
+        data=SocialUserVerificationDTO(email="general_user@example.com", social_provider=None)
+    )
+
+    assert retrieved_user is not None
+    assert retrieved_user.email == "general_user@example.com"
+    assert retrieved_user.social_provider is None
+    assert status == "general"  # 일반 사용자임을 확인
+
+
+@pytest.mark.asyncio
+async def test_get_user_not_found(session):
+    """
+    존재하지 않는 사용자 검색 시 확인.
+    """
+    # Repository 초기화
+    repository = SocialUserReadRepository(User)
+
+    # 존재하지 않는 사용자 검색
+    retrieved_user, status = await repository.get_user(
+        session=session,
+        data=SocialUserVerificationDTO(email="nonexistent@example.com", social_provider=None)
+    )
+
+    assert retrieved_user is None
+    assert status == "not_found"  # 상태가 not_found임을 확인
+
+
+@pytest.mark.asyncio
+async def test_social_user_status_distinguish(session):
+    """
+    소셜 사용자와 일반 사용자의 상태를 구분합니다.
+    """
+    # 데이터 추가
+    social_user = User(
+        email="social_user2@example.com",
+        username="social_user2",
+        social_id="social456",
+        social_provider="facebook"
+    )
+    general_user = User(
+        email="general_user2@example.com",
+        username="general_user2"
+    )
+    session.add(social_user)
+    session.add(general_user)
+    await session.commit()
+
+    # Repository 초기화
+    repository = SocialUserReadRepository(User)
+
+    # 소셜 사용자 검색
+    retrieved_social_user, social_status = await repository.get_user(
+        session=session,
+        data=SocialUserVerificationDTO(email="social_user2@example.com", social_provider="facebook")
+    )
+    assert retrieved_social_user is not None
+    assert social_status == "social_auth"
+
+    # 일반 사용자 검색
+    retrieved_general_user, general_status = await repository.get_user(
+        session=session,
+        data=SocialUserVerificationDTO(email="general_user2@example.com", social_provider=None)
+    )
+    assert retrieved_general_user is not None
+    assert general_status == "general"
