@@ -1,13 +1,9 @@
 import enum
-from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, ForeignKeyConstraint, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Boolean, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.models.base import Base
-
-if TYPE_CHECKING:
-    from src.app.user.model.user import User
 
 
 class LifeStatus(enum.Enum):
@@ -41,9 +37,8 @@ class WorkingStatus(enum.Enum):
 
 class UserData(Base):
     __tablename__ = "user_data"
-    __table_args__ = (ForeignKeyConstraint(["user_id"], ["user.id"], name="profiles_user_id_fk", ondelete="CASCADE"),)
-
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sub: Mapped[int] = mapped_column(String, unique=True, nullable=False)
 
     overcome: Mapped[int] = mapped_column(Integer, nullable=True)
     household_size: Mapped[int] = mapped_column(Integer, nullable=True)
@@ -64,6 +59,3 @@ class UserData(Base):
     primary_industry_status: Mapped[int] = mapped_column(Integer, default=0)
     academic_status: Mapped[int] = mapped_column(Integer, default=0)
     working_status: Mapped[int] = mapped_column(Integer, default=0)
-
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), unique=True, nullable=False)
-    user: Mapped["User"] = relationship("User", back_populates="user_data")
