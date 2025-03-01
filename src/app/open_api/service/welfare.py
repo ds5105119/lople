@@ -3,13 +3,10 @@ from typing import Annotated, Sequence
 
 from fastapi import Depends, Query
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import selectinload
 
 from src.app.open_api.repository.welfare import GovWelfareRepository
 from src.app.open_api.schema.welfare import WelfareDto
-from src.app.user.model.user import User
 from src.app.user.model.user_data import AcademicStatus, LifeStatus, PrimaryIndustryStatus
-from src.app.user.repository.user import UserRepository
 from src.core.dependencies.db import postgres_session
 from src.core.dependencies.oauth import get_current_user_without_error
 
@@ -41,16 +38,6 @@ class GovWelfareService:
                 and_(*(col == False for col in status_mapping.values())),
                 *(filter_on_empty or []),
             )
-
-    async def _get_user(self, session: postgres_session, auth_data) -> User:
-        return await self.user_repository.get_user_by_auth_data(
-            session,
-            auth_data,
-            options=[
-                selectinload(self.user_repository.model.user_data),
-                selectinload(self.user_repository.model.profile),
-            ],
-        )
 
     def _age_filter(self, user: User):
         if user.profile and user.profile.birthday is None:
@@ -241,11 +228,11 @@ class GovWelfareService:
         self,
         session: postgres_session,
         data: Annotated[WelfareDto, Query()],
-        auth=Depends(get_current_user_without_error),
+        auth_data: dict = Depends(get_current_user_without_error),
     ):
         user, filters = None, None
-        if auth:
-            user = await self._get_user(session, auth)
+        if auth_data:
+            user = await self._get_user(session, auth_data)
 
         if user:
             or_conditions = [

@@ -1,28 +1,7 @@
 from typing import Annotated, Optional
 
 from fastapi import Depends, HTTPException, Request
-from fastapi.security import HTTPBearer, OAuth2AuthorizationCodeBearer, OAuth2PasswordBearer
-from webtool.auth import AuthData
-
-
-class ExtendOAuth2PasswordBearer(OAuth2PasswordBearer):
-    """
-    Webtool 인증 미들웨어를 사용하는 Fastapi.security.OAuth2PasswordBearer
-    """
-
-    async def __call__(self, request: Request) -> Optional[str]:
-        auth = request.scope.get("auth")
-        return auth
-
-
-class ExtendOAuth2AuthorizationCodeBearer(OAuth2AuthorizationCodeBearer):
-    """
-    Webtool 인증 미들웨어를 사용하는 Fastapi.security.OAuth2AuthorizationCodeBearer
-    """
-
-    async def __call__(self, request: Request) -> Optional[str]:
-        auth = request.scope.get("auth")
-        return auth
+from fastapi.security import HTTPBearer
 
 
 class ExtendHTTPBearer(HTTPBearer):
@@ -31,24 +10,19 @@ class ExtendHTTPBearer(HTTPBearer):
         return auth
 
 
-oauth_password_schema = ExtendOAuth2PasswordBearer(tokenUrl="/api/user/login")
-oauth_authcode_schema = ExtendOAuth2AuthorizationCodeBearer(
-    tokenUrl="/api/user/token",
-    authorizationUrl="/api/user/authorize",
-)
 http_bearer = ExtendHTTPBearer()
 
 
 async def get_current_user(
-    auth_data: Annotated[AuthData, Depends(http_bearer, use_cache=False)],
-) -> AuthData:
-    if not auth_data:
+    data: Annotated[dict, Depends(http_bearer, use_cache=False)],
+) -> dict:
+    if not data:
         raise HTTPException(status_code=403)
 
-    return auth_data
+    return data
 
 
 async def get_current_user_without_error(
-    auth_data: Annotated[AuthData, Depends(http_bearer, use_cache=False)],
-) -> AuthData:
-    return auth_data
+    data: Annotated[dict, Depends(http_bearer, use_cache=False)],
+) -> dict:
+    return data or {}
