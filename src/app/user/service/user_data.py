@@ -30,7 +30,7 @@ class UserDataService:
     async def read_user_data(
         self,
         session: postgres_session,
-        auth_data=Depends(get_current_user),
+        auth_data: AuthData = Depends(get_current_user),
     ):
         result = await self.repository.get(
             session,
@@ -43,7 +43,7 @@ class UserDataService:
         self,
         data: PartialUserDataDto,
         session: postgres_session,
-        auth_data=Depends(get_current_user),
+        auth_data: AuthData = Depends(get_current_user),
     ):
         await self.repository.update(
             session,
