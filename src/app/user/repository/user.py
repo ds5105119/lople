@@ -3,6 +3,7 @@ from typing import Sequence
 from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import exists
 from sqlalchemy.sql.base import ExecutableOption
 from webtool.auth import AuthData
 
@@ -20,16 +21,20 @@ class UserCreateRepository(ABaseCreateRepository[User]):
 
 
 class UserReadRepository(ABaseReadRepository[User]):
-    async def get_unique_fields(self, session: AsyncSession, email: str, username: str):
+    async def is_exist(self, session: AsyncSession, email: str | None = None, username: str | None = None):
+        if email is None and username is None:
+            raise ValueError("Either 'email' or 'username' must be provided")
+        filters = [
+            f
+            for f in (
+                self.model.email == email if email else None,
+                self.model.username == username if username else None,
+            )
+            if f is not None
+        ]
         result = await self.get(
             session,
-            columns=[self.model.email, self.model.username],
-            filters=[
-                or_(
-                    self.model.email == email,
-                    self.model.username == username,
-                ),
-            ],
+            stmt=[exists().where(or_(*filters))],
         )
         return result
 

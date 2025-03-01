@@ -2,6 +2,7 @@ from typing import cast
 
 import argon2
 from fastapi import Depends, HTTPException, Request, Response, status
+from sqlalchemy.exc import IntegrityError
 from webtool.auth import JWTService
 
 from src.app.user.model.user import User
@@ -114,30 +115,6 @@ class UserService:
 
         return TokenDto(access=access)
 
-    async def _validate_registration(self, data: RegisterDto, session: postgres_session) -> User:
-        """
-        회원가입 유효성 검사
-
-        Args:
-            data: register.RegisterDto
-            session: Session
-
-        Returns:
-            읽은 유저 데이터
-
-        Raises:
-            HTTPException: 이메일 또는 username 가 Table 에서 Unique 하지 않은 경우 409 에러 반환
-        """
-        user = await self.user_repository.get_unique_fields(session, cast(str, data.email), data.username)
-
-        if user.all():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"email {data.email} already exists",
-            )
-
-        return user
-
     def _validate_password(self, hashed_password: str, password: str) -> None:
         """
         패스워드 유효성 검사
@@ -190,11 +167,14 @@ class UserService:
         return user_data
 
     async def register_user(self, data: RegisterDto, session: postgres_session, response: Response) -> LoginResponse:
-        user = await self._validate_registration(data, session)
         data = data.model_dump(by_alias=True)
         data["password"] = self.password_hasher.hash(data["password"])
 
-        user = await self.user_repository.create(session, **data)
+        try:
+            user = await self.user_repository.create(session, **data)
+        except IntegrityError:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
         await session.refresh(user, attribute_names=["profile"])
         return await self._generate_login_response(response, user)
 
@@ -219,6 +199,30 @@ class UserService:
         refresh = self._get_refresh_token(request)
         return await self._generate_refresh_response(response, refresh)
 
+    async def delete_user(self, session: postgres_session, auth_data=Depends(get_current_user)):
+        await self.user_repository.update(
+            session,
+            filters=[self.user_repository.model.id == int(auth_data.identifier)],
+            is_deleted=True,
+        )
+
+    async def inactive_user(self, session: postgres_session, auth_data=Depends(get_current_user)):
+        await self.user_repository.update(
+            session,
+            filters=[self.user_repository.model.id == int(auth_data.identifier)],
+            is_deleted=False,
+        )
+
+    async def update_username(self, username: str, session: postgres_session, auth_data=Depends(get_current_user)):
+        try:
+            await self.user_repository.update(
+                session,
+                filters=[self.user_repository.model.id == int(auth_data.identifier)],
+                username=username,
+            )
+        except IntegrityError:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
     async def update_profile(
         self,
         data: PartialProfileDto,
@@ -232,16 +236,5 @@ class UserService:
             **data,
         )
 
-    async def delete_user(self, session: postgres_session, auth_data=Depends(get_current_user)):
-        await self.user_repository.update(
-            session,
-            filters=[self.user_repository.model.id == int(auth_data.identifier)],
-            is_deleted=True,
-        )
-
-    async def inactive_user(self, session: postgres_session, auth_data=Depends(get_current_user)):
-        await self.user_repository.update(
-            session,
-            filters=[self.user_repository.model.id == int(auth_data.identifier)],
-            is_active=False,
-        )
+    async def check_username_exists(self, username: str, session: postgres_session):
+        return self.user_repository.is_exist(session, username=username)

@@ -19,10 +19,11 @@ class JWT(BaseModel):
     refresh_token_expire_time: Annotated[int, Field(default=604800)]
 
 
-class OAuthConfig(BaseModel):
+class KeycloakConfig(BaseModel):
+    server_url: str
     client_id: str
-    secret_key: str
-    redirect_uri: str
+    realm_name: str
+    client_secret_key: str
 
 
 class AWS(BaseModel):
@@ -55,8 +56,7 @@ class Settings(BaseSettings):
     redis: DataBaseConfig
 
     aws: AWS
-    oauth_google: OAuthConfig
-
+    keycloak: KeycloakConfig
     open_fiscal_data_api: ApiAdapter
     gov_24_data_api: ApiAdapter
 

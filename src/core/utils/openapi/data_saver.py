@@ -120,7 +120,7 @@ class SQLiteDataSaver(BaseDataSaver):
             if isinstance(idx, str):
                 return Index(f"idx_{idx}", getattr(self.table.c, idx))
             else:
-                return Index(f"idx_{"_".join(idx)}", *(getattr(self.table.c, i) for i in idx))
+                return Index(f"idx_{'_'.join(idx)}", *(getattr(self.table.c, i) for i in idx))
 
         if not self._has_pre_existing_table:
             [create_index(idx).create(bind=self.engine) for idx in self.index]

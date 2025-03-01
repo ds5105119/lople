@@ -7,7 +7,7 @@ from webtool.throttle import LimitMiddleware
 
 from src.app.router import router
 from src.core.config import settings
-from src.core.dependencies.auth import anno_backend, jwt_backend
+from src.core.dependencies.auth import anno_backend, keycloak_backend
 from src.core.dependencies.db import Redis
 from src.core.lifespan import lifespan
 
@@ -28,7 +28,7 @@ def create_application(debug=False) -> FastAPI:
         Middleware(
             LimitMiddleware,  # type: ignore
             cache=Redis,
-            auth_backend=jwt_backend,
+            auth_backend=keycloak_backend,
             anno_backend=anno_backend,
         ),
     ]

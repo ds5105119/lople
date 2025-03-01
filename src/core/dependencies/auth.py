@@ -1,13 +1,14 @@
-from webtool.auth import AnnoSessionBackend, JWTBackend, RedisJWTService
+from keycloak import KeycloakOpenID
+from webtool.auth import AnnoSessionBackend, KeycloakBackend
 
-from .db import Redis, settings
+from src.core.config import settings
 
-jwt_service = RedisJWTService(
-    Redis,
-    secret_key=settings.secret_key,
-    access_token_expire_time=settings.jwt.access_token_expire_time,
-    refresh_token_expire_time=settings.jwt.refresh_token_expire_time,
+keycloak_openid = KeycloakOpenID(
+    server_url=settings.keycloak.server_url,
+    client_id=settings.keycloak.client_id,
+    realm_name=settings.keycloak.realm_name,
+    client_secret_key=settings.keycloak.client_secret,
 )
 
 anno_backend = AnnoSessionBackend(session_name="th-session", secure=False)
-jwt_backend = JWTBackend(jwt_service)
+keycloak_backend = KeycloakBackend(keycloak_openid)

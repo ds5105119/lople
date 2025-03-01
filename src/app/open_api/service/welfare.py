@@ -237,7 +237,7 @@ class GovWelfareService:
                 [self.repository.model.JA0322 == True],
             )
 
-    async def get_fiscal(
+    async def get_personal_fiscal(
         self,
         session: postgres_session,
         data: Annotated[WelfareDto, Query()],
@@ -292,3 +292,9 @@ class GovWelfareService:
         )
 
         return result.mappings().all()
+
+    async def get_fiscal(
+        self,
+        session: postgres_session,
+    ):
+        pass

@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from webtool.throttle import limiter
 
 from src.app.user.api.dependencies import user_service
 from src.app.user.schema.user import LoginResponse, TokenDto
@@ -29,6 +30,7 @@ async def logout(
     pass
 
 
+@limiter(max_requests=10)
 @router.post("/refresh", status_code=status.HTTP_200_OK)
 async def refresh_tokens(
     response: Annotated[TokenDto, Depends(user_service.refresh_tokens)],
@@ -36,8 +38,31 @@ async def refresh_tokens(
     return response
 
 
+@limiter(max_requests=10)
 @router.patch("/profile", status_code=status.HTTP_200_OK)
 async def update_profile(
     _: Annotated[None, Depends(user_service.update_profile)],
+):
+    pass
+
+
+@limiter(max_requests=1, interval=7 * 24 * 60 * 60)
+@router.patch("/username", status_code=status.HTTP_200_OK)
+async def update_username(
+    _: Annotated[None, Depends(user_service.update_username)],
+):
+    pass
+
+
+@router.delete("", status_code=status.HTTP_200_OK)
+async def delete_user(
+    _: Annotated[None, Depends(user_service.delete_user)],
+):
+    pass
+
+
+@router.get("/inactive", status_code=status.HTTP_200_OK)
+async def inactive_user(
+    _: Annotated[None, Depends(user_service.inactive_user)],
 ):
     pass
