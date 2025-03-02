@@ -15,12 +15,13 @@ class UserDataCreateRepository(ABaseCreateRepository[UserData]):
 
 class UserDataReadRepository(ABaseReadRepository[UserData]):
     async def get_user_data(self, session: AsyncSession, sub: str):
-        return await self.get_instance(
+        data = await self.get_instance(
             session,
             filters=[
                 self.model.sub == sub,
             ],
         )
+        return data.scalars().one()
 
 
 class UserDataUpdateRepository(ABaseUpdateRepository[UserData]):

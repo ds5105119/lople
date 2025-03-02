@@ -3,11 +3,7 @@ from typing import Annotated, Optional
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer
-from keycloak import KeycloakOpenID
 from pydantic import BaseModel, field_validator
-from webtool.auth.backend import _get_access_token
-
-from src.core.config import settings
 
 
 class User(BaseModel):

@@ -15,12 +15,12 @@ class UserDataService:
         self,
         data: UserDataDto,
         session: postgres_session,
-        auth_data: get_current_user,
+        user: get_current_user,
     ):
         try:
             await self.repository.create(
                 session,
-                sub=auth_data.sub,
+                sub=user.sub,
                 **data.model_dump(exclude_unset=True),
             )
         except IntegrityError:
@@ -29,11 +29,11 @@ class UserDataService:
     async def read_user_data(
         self,
         session: postgres_session,
-        auth_data: get_current_user,
+        user: get_current_user,
     ):
         result = await self.repository.get(
             session,
-            [self.repository.model.sub == auth_data.sub],
+            [self.repository.model.sub == user.sub],
         )
 
         return result.mappings().first()
@@ -42,10 +42,10 @@ class UserDataService:
         self,
         data: PartialUserDataDto,
         session: postgres_session,
-        auth_data: get_current_user,
+        user: get_current_user,
     ):
         await self.repository.update(
             session,
-            [self.repository.model.sub == auth_data.sub],
+            [self.repository.model.sub == user.sub],
             **data.model_dump(exclude_unset=True),
         )
