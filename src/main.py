@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from keycloak import KeycloakOpenID
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from webtool.auth import AnnoSessionBackend, KeycloakBackend
 from webtool.throttle import LimitMiddleware
 
 from src.app.router import router
 from src.core.config import settings
-from src.core.dependencies.auth import anno_backend, keycloak_backend
 from src.core.dependencies.db import Redis
 from src.core.lifespan import lifespan
 
@@ -28,8 +29,15 @@ def create_application(debug=False) -> FastAPI:
         Middleware(
             LimitMiddleware,  # type: ignore
             cache=Redis,
-            auth_backend=keycloak_backend,
-            anno_backend=anno_backend,
+            auth_backend=KeycloakBackend(
+                KeycloakOpenID(
+                    server_url=settings.keycloak.server_url,
+                    client_id=settings.keycloak.client_id,
+                    realm_name=settings.keycloak.realm_name,
+                    client_secret_key=settings.keycloak.client_secret_key,
+                )
+            ),
+            anno_backend=AnnoSessionBackend(session_name="th-session", secure=False),
         ),
     ]
 

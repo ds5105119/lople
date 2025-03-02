@@ -7,14 +7,15 @@ from sqlalchemy import and_, or_
 from src.app.open_api.repository.welfare import GovWelfareRepository
 from src.app.open_api.schema.welfare import WelfareDto
 from src.app.user.model.user_data import AcademicStatus, LifeStatus, PrimaryIndustryStatus
+from src.app.user.repository.user_data import UserDataRepository
+from src.core.dependencies.auth import get_current_user_without_error
 from src.core.dependencies.db import postgres_session
-from src.core.dependencies.oauth import get_current_user_without_error
 
 
 class GovWelfareService:
-    def __init__(self, repository: GovWelfareRepository, user_repository: UserRepository):
+    def __init__(self, repository: GovWelfareRepository, user_data_repository: UserDataRepository):
         self.repository = repository
-        self.user_repository = user_repository
+        self.user_data_repository = user_data_repository
 
     @staticmethod
     def _user_data_filter(

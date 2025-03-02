@@ -1,3 +1,5 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.app.user.model.user_data import UserData
 from src.core.models.repository import (
     ABaseCreateRepository,
@@ -12,7 +14,13 @@ class UserDataCreateRepository(ABaseCreateRepository[UserData]):
 
 
 class UserDataReadRepository(ABaseReadRepository[UserData]):
-    pass
+    async def get_user_data(self, session: AsyncSession, sub: str):
+        return await self.get_instance(
+            session,
+            filters=[
+                self.model.sub == sub,
+            ],
+        )
 
 
 class UserDataUpdateRepository(ABaseUpdateRepository[UserData]):
