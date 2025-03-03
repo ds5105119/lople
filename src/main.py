@@ -37,7 +37,7 @@ def create_application(debug=False) -> FastAPI:
                     client_secret_key=settings.keycloak.client_secret_key,
                 )
             ),
-            anno_backend=AnnoSessionBackend(session_name="th-session", secure=False),
+            anno_backend=AnnoSessionBackend(session_name="th-session", secure=True, same_site="lax"),
         ),
     ]
 
