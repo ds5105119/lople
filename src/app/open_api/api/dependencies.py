@@ -1,3 +1,4 @@
+from src.app.open_api.model.fiscal import Fiscal, FiscalDataSaver
 from src.app.open_api.model.welfare import GovWelfare, GovWelfareSaver
 from src.app.open_api.repository.welfare import GovWelfareRepository
 from src.app.open_api.service.welfare import GovWelfareService
@@ -21,6 +22,11 @@ fiscal_data_manager = PolarsDataManager(
     path="ExpenditureBudgetInit5",
     params={"Key": settings.open_fiscal_data_api.key, "Type": "JSON"},
 )
+fiscal_data_saver = FiscalDataSaver(
+    fiscal_data_manager,
+    db=Postgres_sync,
+    table=Fiscal,
+)
 
 gov24_service_loader = OpenDataLoader(
     base_url="http://api.odcloud.kr/api",
@@ -42,8 +48,6 @@ gov24_service_conditions_manager = PolarsDataManager(
     default_data_saver,
     path="/gov24/v3/supportConditions",
 )
-
-
 gov_welfare = GovWelfareSaver(
     gov24_service_list_manager,
     gov24_service_detail_manager,

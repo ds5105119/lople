@@ -21,7 +21,7 @@ class UserDataReadRepository(ABaseReadRepository[UserData]):
                 self.model.sub == sub,
             ],
         )
-        return data.scalars().one()
+        return data.scalars().first()
 
 
 class UserDataUpdateRepository(ABaseUpdateRepository[UserData]):

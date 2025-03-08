@@ -6,39 +6,40 @@ from src.core.models.base import Base
 from src.core.utils.openapi.data_helper import cast_y_null_to_bool, join
 from src.core.utils.openapi.data_saver import PostgresDataSaver
 
-columns_mapping = {
-    "등록일시": "created_at",
-    "수정일시": "updated_at",
-    "사용자구분": "user_type",
-    "서비스명": "service_name",
-    "서비스목적요약": "service_summary",
-    "서비스분야": "service_category",
-    "선정기준": "service_conditions",
-    "부서명": "offc_name",
-    "소관기관명": "dept_name",
-    "소관기관유형": "dept_type",
-    "소관기관코드": "dept_code",
-    "조회수": "views",
-    "신청기한": "apply_period",
-    "신청방법": "apply_method",
-    "온라인신청사이트URL": "apply_url",
-    "접수기관": "receiving_agency",
-    "지원내용": "support_details",
-    "지원대상": "support_targets",
-    "지원유형": "support_type",
-    "구비서류": "document",
-    "상세조회URL": "detail_url",
-    "전화문의": "contact",
-    "법령": "law",
-}
-
 
 class GovWelfareSaver(PostgresDataSaver):
     def build(self):
+        columns_mapping = {
+            "등록일시": "created_at",
+            "수정일시": "updated_at",
+            "사용자구분": "user_type",
+            "서비스ID": "service_id",
+            "서비스명": "service_name",
+            "서비스목적요약": "service_summary",
+            "서비스분야": "service_category",
+            "선정기준": "service_conditions",
+            "부서명": "offc_name",
+            "소관기관명": "dept_name",
+            "소관기관유형": "dept_type",
+            "소관기관코드": "dept_code",
+            "조회수": "views",
+            "신청기한": "apply_period",
+            "신청방법": "apply_method",
+            "온라인신청사이트URL": "apply_url",
+            "접수기관": "receiving_agency",
+            "지원내용": "support_details",
+            "지원대상": "support_targets",
+            "지원유형": "support_type",
+            "구비서류": "document",
+            "상세조회URL": "detail_url",
+            "전화문의": "contact",
+            "법령": "law",
+        }
+
         df = join(*[m.data for m in self.manager], by=["서비스ID"])
         df = df.rename(columns_mapping)
-        df = df.drop(["서비스ID", "자치법규", "행정규칙", "문의처", "서비스목적", "접수기관명"], strict=False)
-        df = df.filter(df["user_type"].str.contains("개인"))
+        df = df.drop(["자치법규", "행정규칙", "문의처", "서비스목적", "접수기관명"], strict=False)
+        df = df.filter(df["user_type"].str.contains("개인") | df["user_type"].str.contains("가구"))
         df = cast_y_null_to_bool(df)
         df = df.with_columns(pl.col("views").fill_null("0").cast(pl.Int32))
         df = df.with_columns(
@@ -89,6 +90,7 @@ class GovWelfare(Base):
 
     user_type: Mapped[str] = mapped_column(Text, nullable=True)
 
+    service_id: Mapped[int] = mapped_column(Text, nullable=True)
     service_name: Mapped[str] = mapped_column(Text, nullable=True)
     service_summary: Mapped[str] = mapped_column(Text, nullable=True)
     service_category: Mapped[int] = mapped_column(Text, nullable=True)

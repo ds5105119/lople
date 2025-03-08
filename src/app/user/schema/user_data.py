@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from src.app.user.model.user_data import AcademicStatus, LifeStatus, PrimaryIndustryStatus, WorkingStatus
+from src.app.user.model.user_data import AcademicStatus
 from src.core.utils.pydantichelper import partial_model
 
 
@@ -20,10 +20,19 @@ class UserDataDto(BaseModel):
     veteran: bool
     disease: bool
 
-    life_status: LifeStatus
-    primary_industry_status: PrimaryIndustryStatus
+    prospective_parents_or_infertility: bool
+    pregnant: bool
+    childbirth_or_adoption: bool
+
+    farmers: bool
+    fishermen: bool
+    livestock_farmers: bool
+    forestry_workers: bool
+
+    unemployed: bool
+    employed: bool
+
     academic_status: AcademicStatus
-    working_status: WorkingStatus
 
     model_config = ConfigDict(use_enum_values=True)
 

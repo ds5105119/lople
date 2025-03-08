@@ -17,7 +17,7 @@ async def execute(func, *args, **kwargs):
 
 class BaseDataManager(ABC):
     """
-    REST API 의 데이터를 관리하는 클래스
+    REST API 의 데이터를 캐시하는 클래스
 
     Attributes:
         data (Any): 데이터

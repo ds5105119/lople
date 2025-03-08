@@ -6,33 +6,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 from src.core.models.base import Base
 
 
-class LifeStatus(enum.Enum):
-    none = 0
-    prospective_parents_or_infertility = 1
-    pregnant = 2
-    childbirth_or_adoption = 3
-
-
-class PrimaryIndustryStatus(enum.Enum):
-    none = 0
-    farmers = 1
-    fishermen = 2
-    livestock_farmers = 3
-    forestry_workers = 4
-
-
 class AcademicStatus(enum.Enum):
     none = 0
     elementary_stu = 1
     middle_stu = 2
     high_stu = 3
     university_stu = 4
-
-
-class WorkingStatus(enum.Enum):
-    none = 0
-    unemployed = 1
-    employed = 2
 
 
 class UserData(Base):
@@ -55,7 +34,17 @@ class UserData(Base):
     veteran: Mapped[bool] = mapped_column(Boolean, default=False)
     disease: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    life_status: Mapped[int] = mapped_column(Integer, default=0)
-    primary_industry_status: Mapped[int] = mapped_column(Integer, default=0)
+    prospective_parents_or_infertility: Mapped[bool] = mapped_column(Boolean, default=False)
+    pregnant: Mapped[bool] = mapped_column(Boolean, default=False)
+    childbirth_or_adoption: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    farmers: Mapped[bool] = mapped_column(Boolean, default=False)
+    fishermen: Mapped[bool] = mapped_column(Boolean, default=False)
+    livestock_farmers: Mapped[bool] = mapped_column(Boolean, default=False)
+    forestry_workers: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    unemployed: Mapped[bool] = mapped_column(Boolean, default=False)
+    employed: Mapped[bool] = mapped_column(Boolean, default=False)
+
     academic_status: Mapped[int] = mapped_column(Integer, default=0)
     working_status: Mapped[int] = mapped_column(Integer, default=0)
