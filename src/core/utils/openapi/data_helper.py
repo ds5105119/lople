@@ -4,7 +4,7 @@ import polars as pl
 def join(*df: pl.DataFrame, by: list[str]):
     table = df[0]
     for frame in df[1:]:
-        columns = set(frame.columns) - set(col for col in table.columns if col not in by)
+        columns = list(set(frame.columns) - set(col for col in table.columns if col not in by))
         table = table.join(frame.select(columns), on=by, how="left")
     return table
 

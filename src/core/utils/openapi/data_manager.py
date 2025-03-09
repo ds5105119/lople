@@ -1,4 +1,5 @@
 import inspect
+import json
 from abc import ABC, abstractmethod
 from typing import Any, Callable
 
@@ -25,6 +26,9 @@ class BaseDataManager(ABC):
 
     data: Any
     is_initialized: bool
+    path: str
+    params: dict
+    id: int
 
     @abstractmethod
     async def init(self):
@@ -54,23 +58,24 @@ class PolarsDataManager(BaseDataManager):
         infer_scheme_length: int = 100000,
     ):
         self.data: pl.DataFrame = pl.DataFrame()
-        self.is_initialized = False
+        self.path: str = path
+        self.params: dict = params or {}
+        self.is_initialized: bool = False
         self._data_loader = data_loader
         self._data_cache = data_cache
-        self._path = path
-        self._params = params or {}
         self._infer_scheme_length = infer_scheme_length
         self._callbacks: list[Callable] = []
+        self.id = hash(json.dumps(self.params).encode() + self.path.encode())
 
-    async def init(self, reload: bool = False):
-        if not reload:
-            data = await self._data_cache.get_cache(self._path)
+    async def init(self, always_reload: bool = False):
+        if not always_reload:
+            data = await self._data_cache.get_cache(self.path)
         else:
             data = None
 
         if data is None:
-            data = await self._data_loader.get_data(self._path, self._params)
-            await self._data_cache.set_cache(self._path, data)
+            data = await self._data_loader.get_data(self.path, self.params)
+            await self._data_cache.set_cache(self.path, data)
 
         self.data = pl.DataFrame(data, infer_schema_length=self._infer_scheme_length)
         self.is_initialized = True

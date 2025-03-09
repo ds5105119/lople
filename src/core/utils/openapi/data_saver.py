@@ -1,3 +1,4 @@
+import hashlib
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
@@ -11,6 +12,17 @@ from webtool.db import SyncDB
 from .data_manager import BaseDataManager
 
 T = TypeVar("T", bound=DeclarativeBase)
+
+
+def hash_df(df: pl.DataFrame) -> str:
+    hasher = hashlib.sha1()
+    schema_hash = sorted([c.encode() + str(t).encode() for c, t in df.schema.items()])
+    row_hash = sorted([h.to_bytes(64) for h in df.hash_rows()])
+
+    hasher.update(b"".join(schema_hash))
+    hasher.update(b"".join(row_hash))
+
+    return hasher.hexdigest()
 
 
 class BaseDataSaver(ABC):
@@ -29,10 +41,12 @@ class PostgresDataSaver(BaseDataSaver):
         *data: BaseDataManager,
         db: SyncDB,
         table: type[T],
+        hash_table: str | None = None,
     ):
         self.db = db
-        self.manager: tuple[BaseDataManager, ...] = data
+        self.manager: tuple[BaseDataManager, ...] = tuple(data)
         self.table = table
+        self.hash_table = hash_table or "_temp_polars_hasher"
 
         [m.register_callback(self._callback) for m in self.manager]
 
@@ -45,6 +59,21 @@ class PostgresDataSaver(BaseDataSaver):
             self._save(data)
 
     def _save(self, data: pl.DataFrame):
+        hash_data = hash_df(data)
+
+        try:
+            saved_hash = pl.read_database(
+                query=f"SELECT * FROM {self.hash_table} WHERE table_name = :table_name AND hash = :hash",
+                connection=self.db.engine,
+                execute_options={"parameters": {"table_name": self.table.__tablename__, "hash": hash_data}},
+            )
+        except sqlalchemy.exc.ProgrammingError:
+            pass
+        else:
+            if not saved_hash.is_empty():
+                print(f"🔹The same data already exists name {self.table.__tablename__}, skipping the operation.")
+                return
+
         try:
             with self.db.engine.connect() as conn:
                 with conn.begin():
@@ -53,6 +82,9 @@ class PostgresDataSaver(BaseDataSaver):
             pass
 
         data.write_database(self.table.__tablename__, connection=self.db.engine, if_table_exists="append")
+        pl.DataFrame({"table_name": [self.table.__tablename__], "hash": [hash_data]}).write_database(
+            self.hash_table, connection=self.db.engine, if_table_exists="append"
+        )
 
 
 class SQLiteDataSaver(BaseDataSaver):

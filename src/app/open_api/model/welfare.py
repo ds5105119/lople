@@ -9,6 +9,9 @@ from src.core.utils.openapi.data_saver import PostgresDataSaver
 
 class GovWelfareSaver(PostgresDataSaver):
     def build(self):
+        path_order = {"/gov24/v3/serviceList": 1, "/gov24/v3/serviceDetail": 2, "/gov24/v3/supportConditions": 3}
+        self.manager = tuple(sorted(self.manager, key=lambda manager: path_order.get(manager.path, float("inf"))))
+
         columns_mapping = {
             "등록일시": "created_at",
             "수정일시": "updated_at",
@@ -18,6 +21,7 @@ class GovWelfareSaver(PostgresDataSaver):
             "서비스목적요약": "service_summary",
             "서비스분야": "service_category",
             "선정기준": "service_conditions",
+            "서비스목적": "service_description",
             "부서명": "offc_name",
             "소관기관명": "dept_name",
             "소관기관유형": "dept_type",
@@ -36,9 +40,9 @@ class GovWelfareSaver(PostgresDataSaver):
             "법령": "law",
         }
 
-        df = join(*[m.data for m in self.manager], by=["서비스ID"])
+        df = join(*[m.data for m in self.manager], by=["서비스ID"]).sort("서비스ID")
         df = df.rename(columns_mapping)
-        df = df.drop(["자치법규", "행정규칙", "문의처", "서비스목적", "접수기관명"], strict=False)
+        df = df.drop(["자치법규", "행정규칙", "문의처", "접수기관명"], strict=False)
         df = df.filter(df["user_type"].str.contains("개인") | df["user_type"].str.contains("가구"))
         df = cast_y_null_to_bool(df)
         df = df.with_columns(pl.col("views").fill_null("0").cast(pl.Int32))
@@ -46,6 +50,7 @@ class GovWelfareSaver(PostgresDataSaver):
             pl.col("created_at").str.strptime(dtype=pl.Datetime, format="%Y%m%d%H%M%S").alias("created_at"),
             pl.col("updated_at").str.strptime(dtype=pl.Datetime, format="%Y%m%d%H%M%S").alias("updated_at"),
         )
+        df = df.sort(by=["updated_at"], descending=True, maintain_order=True)
 
         return df
 
@@ -95,6 +100,7 @@ class GovWelfare(Base):
     service_summary: Mapped[str] = mapped_column(Text, nullable=True)
     service_category: Mapped[int] = mapped_column(Text, nullable=True)
     service_conditions: Mapped[str] = mapped_column(Text, nullable=True)
+    service_description: Mapped[str] = mapped_column(Text, nullable=True)
 
     offc_name: Mapped[str] = mapped_column(Text, nullable=True)
     dept_name: Mapped[str] = mapped_column(Text, nullable=True)

@@ -53,13 +53,13 @@ class BaseReadRepository[T](BaseRepository[T]):
     ) -> _P:
         if stmt is None:
             stmt = select(self.model.__table__)
-        if filters is not None:
+        if filters:
             stmt = stmt.where(*filters)
-        if orderby is not None:
+        if orderby:
             stmt = stmt.order_by(*orderby)
-        if options is not None:
+        if options:
             stmt = stmt.options(*options)
-        if columns is not None:
+        if columns:
             stmt = stmt.with_only_columns(*columns)
         result = session.execute(stmt)
 
@@ -186,15 +186,14 @@ class ABaseReadRepository[T](ABaseRepository[T]):
     ) -> _P:
         if stmt is None:
             stmt = select(self.model.__table__)
-        if filters is not None:
+        if filters:
             stmt = stmt.where(*filters)
-        if orderby is not None:
+        if orderby:
             stmt = stmt.order_by(*orderby)
-        if options is not None:
+        if options:
             stmt = stmt.options(*options)
-        if columns is not None:
+        if columns:
             stmt = stmt.with_only_columns(*columns)
-
         result = await session.execute(stmt)
 
         return result

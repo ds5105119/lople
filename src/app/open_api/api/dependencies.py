@@ -1,6 +1,15 @@
-from src.app.open_api.model.fiscal import Fiscal, FiscalDataSaver
+from src.app.open_api.model.fiscal import (
+    Fiscal,
+    FiscalByYear,
+    FiscalByYearDataSaver,
+    FiscalByYearOffc,
+    FiscalByYearOffcDataSaver,
+    FiscalDataSaver,
+)
 from src.app.open_api.model.welfare import GovWelfare, GovWelfareSaver
+from src.app.open_api.repository.fiscal import FiscalByYearOffcRepository, FiscalByYearRepository, FiscalRepository
 from src.app.open_api.repository.welfare import GovWelfareRepository
+from src.app.open_api.service.fiscal import FiscalService
 from src.app.open_api.service.welfare import GovWelfareService
 from src.app.user.api.dependencies import user_data_repository
 from src.core.config import settings
@@ -26,6 +35,16 @@ fiscal_data_saver = FiscalDataSaver(
     fiscal_data_manager,
     db=Postgres_sync,
     table=Fiscal,
+)
+fiscal_by_year_data_saver = FiscalByYearDataSaver(
+    fiscal_data_manager,
+    db=Postgres_sync,
+    table=FiscalByYear,
+)
+fiscal_by_year_offc_data_saver = FiscalByYearOffcDataSaver(
+    fiscal_data_manager,
+    db=Postgres_sync,
+    table=FiscalByYearOffc,
 )
 
 gov24_service_loader = OpenDataLoader(
@@ -55,6 +74,11 @@ gov_welfare = GovWelfareSaver(
     db=Postgres_sync,
     table=GovWelfare,
 )
+
+fiscal_repository = FiscalRepository(Fiscal)
+fiscal_by_year_repository = FiscalByYearRepository(FiscalByYear)
+fiscal_by_year_offc_repository = FiscalByYearOffcRepository(FiscalByYearOffc)
+fiscal_service = FiscalService(fiscal_repository, fiscal_by_year_repository, fiscal_by_year_offc_repository)
 
 gov_welfare_repository = GovWelfareRepository(GovWelfare)
 gov_welfare_service = GovWelfareService(gov_welfare_repository, user_data_repository)
