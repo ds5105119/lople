@@ -33,6 +33,11 @@ class AWS(BaseModel):
     s3_region_name: str
 
 
+class NATS(BaseModel):
+    server: str | list[str] = Field(default="nats://localhost:4222")
+    name: str | None = Field(default=None)
+
+
 class ApiAdapter(BaseModel):
     key: str
 
@@ -54,11 +59,14 @@ class Settings(BaseSettings):
     jwt: Annotated[JWT, Field(default_factory=JWT)]
     postgres: DataBaseConfig
     redis: DataBaseConfig
+    nats: NATS = Field(default_factory=NATS)
 
     aws: AWS
     keycloak: KeycloakConfig
+
     open_fiscal_data_api: ApiAdapter
     gov_24_data_api: ApiAdapter
+    kakao_api: ApiAdapter
 
     @property
     def postgres_dsn(self) -> PostgresDsn:

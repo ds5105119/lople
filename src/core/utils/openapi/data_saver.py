@@ -15,9 +15,11 @@ T = TypeVar("T", bound=DeclarativeBase)
 
 
 def hash_df(df: pl.DataFrame) -> str:
+    df = df.select(df.columns).sort(by=sorted(df.columns))
+
     hasher = hashlib.sha1()
-    schema_hash = sorted([c.encode() + str(t).encode() for c, t in df.schema.items()])
-    row_hash = sorted([h.to_bytes(64) for h in df.hash_rows()])
+    schema_hash = [c.encode() + str(t).encode() for c, t in df.schema.items()]
+    row_hash = [h.to_bytes(64) for h in df.hash_rows()]
 
     hasher.update(b"".join(schema_hash))
     hasher.update(b"".join(row_hash))

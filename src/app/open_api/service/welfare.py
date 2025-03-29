@@ -205,10 +205,14 @@ class GovWelfareService:
                     )
                     if c is not None
                 ]
-                if data.tag:
-                    and_conditions.append(self.repository.model.support_type.contains(data.tag))
 
                 filters = and_(or_(*or_conditions), *and_conditions) if or_conditions else and_(*and_conditions)
+
+        if data.tag:
+            if filters:
+                filters = and_(filters, self.repository.model.support_type.contains(data.tag))
+            else:
+                filters = [self.repository.model.support_type.contains(data.tag)]
 
         result = await self.repository.get_page(
             session,
@@ -223,6 +227,7 @@ class GovWelfareService:
                 self.repository.model.service_summary,
                 self.repository.model.service_category,
                 self.repository.model.service_conditions,
+                self.repository.model.service_description,
                 self.repository.model.apply_period,
                 self.repository.model.apply_url,
                 self.repository.model.document,

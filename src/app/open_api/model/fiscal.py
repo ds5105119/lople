@@ -5,6 +5,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from src.core.models.base import Base
 from src.core.utils.openapi.data_saver import PostgresDataSaver
 
+mappings = [
+    ["문화재청", "국가유산청"],
+    ["안전행정부", "행정자치부", "행정안전부"],
+    ["미래창조과학부", "과학기술정보통신부"],
+    ["국가보훈처", "국가보훈부"],
+]
+
 
 class FiscalDataSaver(PostgresDataSaver):
     def build(self):
@@ -12,14 +19,10 @@ class FiscalDataSaver(PostgresDataSaver):
             raise RuntimeError("manager not set")
 
         df: pl.DataFrame = self.manager[0].data
-        mappings = [
-            ["문화재청", "국가유산청"],
-            ["안전행정부", "행정자치부", "행정안전부"],
-            ["미래창조과학부", "과학기술정보통신부"],
-            ["국가보훈처", "국가보훈부"],
-        ]
+        df = df.drop("ANEXP_INQ_STND_CD")
+        df = df.with_columns(pl.col("OFFC_NM").fill_null("미정").alias("OFFC_NM"))
 
-        department_no = {k: v for v, k in enumerate(sorted(set(df.select("OFFC_NM").to_series())))}
+        department_no = {k: v for v, k in enumerate(sorted(set(df["OFFC_NM"])))}
         for mapping in mappings:
             min_no = min([department_no[name] for name in mapping if department_no.get(name)])
             department_no.update({name: min_no for name in mapping})
@@ -42,14 +45,10 @@ class FiscalByYearDataSaver(PostgresDataSaver):
             raise RuntimeError("manager not set")
 
         df: pl.DataFrame = self.manager[0].data
-        mappings = [
-            ["문화재청", "국가유산청"],
-            ["안전행정부", "행정자치부", "행정안전부"],
-            ["미래창조과학부", "과학기술정보통신부"],
-            ["국가보훈처", "국가보훈부"],
-        ]
+        df = df.drop("ANEXP_INQ_STND_CD")
+        df = df.with_columns(pl.col("OFFC_NM").fill_null("미정").alias("OFFC_NM"))
 
-        department_no = {k: v for v, k in enumerate(sorted(set(df.select("OFFC_NM").to_series())))}
+        department_no = {k: v for v, k in enumerate(sorted(set(df["OFFC_NM"])))}
         for mapping in mappings:
             min_no = min([department_no[name] for name in mapping if department_no.get(name)])
             department_no.update({name: min_no for name in mapping})
@@ -83,14 +82,10 @@ class FiscalByYearOffcDataSaver(PostgresDataSaver):
             raise RuntimeError("manager not set")
 
         df: pl.DataFrame = self.manager[0].data
-        mappings = [
-            ["문화재청", "국가유산청"],
-            ["안전행정부", "행정자치부", "행정안전부"],
-            ["미래창조과학부", "과학기술정보통신부"],
-            ["국가보훈처", "국가보훈부"],
-        ]
+        df = df.drop("ANEXP_INQ_STND_CD")
+        df = df.with_columns(pl.col("OFFC_NM").fill_null("미정").alias("OFFC_NM"))
 
-        department_no = {k: v for v, k in enumerate(sorted(set(df.select("OFFC_NM").to_series())))}
+        department_no = {k: v for v, k in enumerate(sorted(set(df["OFFC_NM"])))}
         for mapping in mappings:
             min_no = min([department_no[name] for name in mapping if department_no.get(name)])
             department_no.update({name: min_no for name in mapping})
@@ -107,6 +102,7 @@ class FiscalByYearOffcDataSaver(PostgresDataSaver):
             .agg(
                 pl.col("Y_YY_MEDI_KCUR_AMT").sum().alias("Y_YY_MEDI_KCUR_AMT"),
                 pl.col("Y_YY_DFN_MEDI_KCUR_AMT").sum().alias("Y_YY_DFN_MEDI_KCUR_AMT"),
+                pl.count().alias("COUNT"),
             )
             .sort(["NORMALIZED_DEPT_NO", "FSCL_YY"])
             .with_columns(
@@ -168,6 +164,8 @@ class Fiscal(Base):
     SACTV_NM: Mapped[str] = mapped_column(Text)
     BZ_CLS_NM: Mapped[str] = mapped_column(Text)
     FIN_DE_EP_NM: Mapped[str] = mapped_column(Text)
+    Y_PREY_FIRST_KCUR_AMT: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    Y_PREY_FNL_FRC_AMT: Mapped[int] = mapped_column(BigInteger, nullable=True)
     Y_YY_MEDI_KCUR_AMT: Mapped[int] = mapped_column(BigInteger, nullable=True)
     Y_YY_DFN_MEDI_KCUR_AMT: Mapped[int] = mapped_column(BigInteger, nullable=True)
 
@@ -228,3 +226,4 @@ class FiscalByYearOffc(Base):
     Y_YY_DFN_MEDI_KCUR_AMT: Mapped[int] = mapped_column(BigInteger, nullable=True)
     Y_YY_MEDI_KCUR_AMT_PCT: Mapped[int] = mapped_column(Double, nullable=True)
     Y_YY_DFN_MEDI_KCUR_AMT_PCT: Mapped[int] = mapped_column(Double, nullable=True)
+    COUNT: Mapped[int] = mapped_column(Integer)

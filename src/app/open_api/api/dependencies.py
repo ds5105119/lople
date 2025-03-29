@@ -22,14 +22,14 @@ default_data_saver = RedisDataCache(Redis)
 
 fiscal_data_loader = FiscalDataLoader(
     base_url="http://openapi.openfiscaldata.go.kr",
-    paths={"ExpenditureBudgetInit5": {"get": {}}},
+    paths={"ExpenditureBudgetInit5": {"get": {}}, "TotalExpenditure5": {"get": {}}},
     api_config=ApiConfig(request_page="pIndex", request_size="pSize"),
 )
 fiscal_data_manager = PolarsDataManager(
     fiscal_data_loader,
     default_data_saver,
-    path="ExpenditureBudgetInit5",
-    params={"Key": settings.open_fiscal_data_api.key, "Type": "JSON"},
+    path="TotalExpenditure5",
+    params={"Key": settings.open_fiscal_data_api.key, "Type": "JSON", "BDG_FND_DIV_CD": 0, "ANEXP_INQ_STND_CD": 1},
 )
 fiscal_data_saver = FiscalDataSaver(
     fiscal_data_manager,
