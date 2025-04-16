@@ -11,7 +11,7 @@ class Address(BaseModel):
     mountain_yn: Literal["Y", "N"]
     main_address_no: str
     sub_address_no: str
-    zip_code: str
+    zip_code: str | None = Field(default=None)
 
 
 class RoadAddress(BaseModel):

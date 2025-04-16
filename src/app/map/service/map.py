@@ -19,20 +19,18 @@ class MapService:
         request: Request,
         coord: Annotated[Coord2AddrDto, Query()],
     ) -> Coord2AddrResponse:
-        requests_client = request.app.requests_client
-        request_headers = {"Authorization": f"KakaoAK {settings.kakao_api.key}"}
-        request_params = coord.model_dump()
+        client = request.app.requests_client
+        headers = {"Authorization": f"KakaoAK {settings.kakao_api.key}"}
+        payload = coord.model_dump()
 
-        response = await requests_client.get(
+        response = await client.get(
             "https://dapi.kakao.com/v2/local/geo/coord2address.json",
-            headers=request_headers,
-            params=request_params,
+            headers=headers,
+            params=payload,
         )
         data = response.json()
-        print(data)
 
         try:
             return Coord2AddrResponse.model_validate(data)
         except ValidationError as e:
-            print(e)
             raise HTTPException(status_code=400, detail="Invalid coordinate")

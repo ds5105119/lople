@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import BaseModel, Field, PostgresDsn, RedisDsn
+from pydantic import BaseModel, Field, PostgresDsn, RedisDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,11 +19,32 @@ class JWT(BaseModel):
     refresh_token_expire_time: Annotated[int, Field(default=604800)]
 
 
-class KeycloakConfig(BaseModel):
+class KeycloakOpenIDClientConfig(BaseModel):
     server_url: str
     client_id: str
     realm_name: str
-    client_secret_key: str
+    client_secret_key: str | None = Field(default=None)
+
+
+class KeycloakAdminClientConfig(BaseModel):
+    server_url: str
+    username: str
+    password: str
+    realm_name: str
+    user_realm_name: str
+    client_id: str
+    client_secret_key: str | None = Field(default=None)
+    verify: bool | str
+
+    @field_validator("verify")
+    def convert_verify(cls, v):
+        if isinstance(v, str):
+            lowered = v.lower()
+            if lowered == "true":
+                return True
+            elif lowered == "false":
+                return False
+        return v
 
 
 class AWS(BaseModel):
@@ -62,7 +83,8 @@ class Settings(BaseSettings):
     nats: NATS = Field(default_factory=NATS)
 
     aws: AWS
-    keycloak: KeycloakConfig
+    keycloak: KeycloakOpenIDClientConfig
+    keycloak_admin: KeycloakAdminClientConfig
 
     open_fiscal_data_api: ApiAdapter
     gov_24_data_api: ApiAdapter

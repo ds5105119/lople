@@ -20,3 +20,13 @@ async def read_user_data(user_data: Annotated[None, Depends(user_data_service.re
 @router.patch("", status_code=status.HTTP_200_OK)
 async def update_user_data(_: Annotated[None, Depends(user_data_service.update_user_data)]):
     pass
+
+
+@router.patch("/address", status_code=status.HTTP_200_OK)
+async def update_address_oidc(_: Annotated[None, Depends(user_data_service.update_address_oidc)]):
+    pass
+
+
+@router.patch("/address/kakao", status_code=status.HTTP_200_OK)
+async def update_address_kakao(_: Annotated[None, Depends(user_data_service.update_address_kakao)]):
+    pass

@@ -1,15 +1,30 @@
+from urllib.parse import urlparse
+
 from fastapi import HTTPException, status
+from keycloak import KeycloakAdmin
 from sqlalchemy.exc import IntegrityError
 
 from src.app.user.repository.user_data import UserDataRepository
-from src.app.user.schema.user_data import PartialUserDataDto, UserDataDto
-from src.core.dependencies.auth import get_current_user
+from src.app.user.schema.user_data import KakaoAddressDto, OIDCAddressDto, PartialUserDataDto, UserDataDto
+from src.core.dependencies.auth import get_current_user, keycloak_admin
 from src.core.dependencies.db import postgres_session
 
 
+def safe_url_join(base: str, *paths: str) -> str:
+    part = urlparse(base)
+    path = "/".join(part.strip("/") for part in paths)
+    part = part._replace(path=path)
+    return part.geturl()
+
+
 class UserDataService:
-    def __init__(self, repository: UserDataRepository):
+    def __init__(
+        self,
+        repository: UserDataRepository,
+        keycloak_admin: KeycloakAdmin,
+    ):
         self.repository = repository
+        self.keycloak_admin = keycloak_admin
 
     async def create_user_data(
         self,
@@ -49,3 +64,37 @@ class UserDataService:
             [self.repository.model.sub == user.sub],
             **data.model_dump(exclude_unset=True),
         )
+
+    async def update_address_oidc(
+        self,
+        data: OIDCAddressDto,
+        user: get_current_user,
+    ):
+        payload = await keycloak_admin.a_get_user(user.sub)
+        payload["attributes"].update(data.model_dump())
+
+        await self.keycloak_admin.a_update_user(user_id=user.sub, payload={"attributes": attributes})
+
+    async def update_address_kakao(
+        self,
+        data: KakaoAddressDto,
+        user: get_current_user,
+    ):
+        if data.meta.total_count == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
+        oidc_address = OIDCAddressDto(
+            location=data.location,
+            postal_code=data.documents[0].road_address.zone_no,
+            region=data.documents[0].road_address.region_1depth_name,
+            locality=data.documents[0].road_address.region_2depth_name,
+            sub_locality=data.documents[0].address.region_3depth_name,
+            country="kr",
+            street=data.documents[0].road_address.address_name,
+            formatted=data.documents[0].address.address_name,
+        )
+
+        payload = await keycloak_admin.a_get_user(user.sub)
+        payload["attributes"].update(oidc_address.model_dump())
+
+        await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
