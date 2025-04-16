@@ -73,7 +73,7 @@ class UserDataService:
         payload = await keycloak_admin.a_get_user(user.sub)
         payload["attributes"].update(data.model_dump())
 
-        await self.keycloak_admin.a_update_user(user_id=user.sub, payload={"attributes": attributes})
+        await self.keycloak_admin.a_update_user(user_id=user.sub, payload={"attributes": payload})
 
     async def update_address_kakao(
         self,
