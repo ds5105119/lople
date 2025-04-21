@@ -1,5 +1,3 @@
-from urllib.parse import urlparse
-
 from fastapi import HTTPException, status
 from keycloak import KeycloakAdmin
 from sqlalchemy.exc import IntegrityError
@@ -10,13 +8,6 @@ from src.core.dependencies.auth import get_current_user, keycloak_admin
 from src.core.dependencies.db import postgres_session
 
 
-def safe_url_join(base: str, *paths: str) -> str:
-    part = urlparse(base)
-    path = "/".join(part.strip("/") for part in paths)
-    part = part._replace(path=path)
-    return part.geturl()
-
-
 class UserDataService:
     def __init__(
         self,
@@ -25,6 +16,19 @@ class UserDataService:
     ):
         self.repository = repository
         self.keycloak_admin = keycloak_admin
+
+        """
+        유저의 데이터를 관리하는 서비스
+        
+        Args:
+            base_url (str):
+            swagger_url (str):
+            api_key (str):
+            paths (dict):
+            batch_size (int):
+            timeout (int):
+            api_config (ApiConfig):
+        """
 
     async def create_user_data(
         self,
